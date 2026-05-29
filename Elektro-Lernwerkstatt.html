@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elektro-Lernwerkstatt – Strom, Spannung, Widerstand & Leistung</title>
+<style>
+  /* ============================================================
+     ELEKTRO-LERNWERKSTATT  –  Single-File Lernsoftware
+     Themen: Stromstärke (I), Spannung (U), Widerstand (R), Leistung (P)
+     ============================================================ */
+  :root{
+    --bg:#0f141b; --panel:#1a212c; --panel2:#222c3a; --line:#2f3b4d;
+    --text:#e6edf5; --muted:#94a3b8; --accent:#38bdf8; --accent2:#22d3ee;
+    --ok:#22c55e; --bad:#ef4444; --warn:#f59e0b;
+    --wire:#cbd5e1; --wire-dark:#0b0f15;
+    --current:#fbbf24; /* Stromfluss-Farbe */
+    --probe-red:#ef4444; --probe-black:#1f2937;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Segoe UI",system-ui,Arial,sans-serif;
+    background:var(--bg); color:var(--text); font-size:15px; line-height:1.45;
+  }
+  button{font-family:inherit}
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    padding:10px 18px; background:linear-gradient(180deg,#16202b,#121922);
+    border-bottom:1px solid var(--line);
+  }
+  header h1{font-size:18px; margin:0; letter-spacing:.3px}
+  header h1 .ico{color:var(--accent)}
+  header .sub{color:var(--muted); font-size:12px}
+  .spacer{flex:1}
+
+  .modeswitch{display:flex; background:#0b1118; border:1px solid var(--line); border-radius:10px; overflow:hidden}
+  .modeswitch button{
+    background:transparent; color:var(--muted); border:0; padding:8px 16px; cursor:pointer; font-weight:600;
+  }
+  .modeswitch button.active{background:var(--accent); color:#062231}
+
+  .btn{
+    background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px;
+  }
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent); color:#062231; border-color:var(--accent)}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.ok{background:var(--ok); color:#04240f; border-color:var(--ok)}
+  .btn.ghost{background:transparent}
+  .btn.small{padding:5px 9px; font-size:12px}
+  .btn.danger{color:#fecaca; border-color:#7f1d1d}
+  .btn.danger:hover{background:#7f1d1d}
+
+  select,input[type=text],input[type=number]{
+    background:#0b1118; color:var(--text); border:1px solid var(--line);
+    border-radius:7px; padding:7px 9px; font-size:14px;
+  }
+  select:focus,input:focus{outline:0; border-color:var(--accent)}
+  label{font-size:13px; color:var(--muted)}
+
+  /* ---------- Layout ---------- */
+  main{display:grid; grid-template-columns:1.35fr 1fr; gap:14px; padding:14px; align-items:start}
+  @media(max-width:980px){ main{grid-template-columns:1fr} }
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px;
+  }
+  .card h2{margin:0 0 10px; font-size:15px; display:flex; align-items:center; gap:8px}
+  .card h2 .tag{font-size:11px; color:var(--muted); font-weight:500}
+
+  /* ---------- Schematic ---------- */
+  #schemWrap{position:relative; background:
+      radial-gradient(circle at 1px 1px, #20293480 1px, transparent 0) 0 0/22px 22px,
+      #0c1117;
+    border:1px solid var(--line); border-radius:10px; overflow:hidden}
+  svg#schematic{display:block; width:100%; height:auto; touch-action:none}
+
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px}
+
+  /* schematic element styling */
+  .wire{stroke:var(--wire); stroke-width:2.4; fill:none; stroke-linecap:round}
+  .sym-rect{fill:#0c1117; stroke:var(--wire); stroke-width:2.4}
+  .sym-fill{fill:#0c1117}
+  .sym-line{stroke:var(--wire); stroke-width:2.4; stroke-linecap:round}
+  .lbl{fill:var(--text); font:600 14px "Segoe UI",sans-serif}
+  .lbl-val{fill:var(--accent2); font:500 12.5px "Segoe UI",sans-serif}
+  .lbl-small{fill:var(--muted); font:500 10px "Segoe UI",sans-serif}
+  .res-hit{cursor:pointer}
+  .res-hit:hover .sym-rect{stroke:var(--accent)}
+  .src-hit{cursor:pointer}
+  .src-hit:hover .sym-line{stroke:var(--accent)}
+
+  /* measured highlight */
+  .measured .sym-rect, .measured .sym-line{stroke:var(--accent2)!important; filter:drop-shadow(0 0 4px var(--accent2))}
+
+  /* ---- current flow animation ---- */
+  .flow{stroke:var(--current); stroke-width:2.4; fill:none; stroke-linecap:round;
+        stroke-dasharray:7 9; opacity:0; pointer-events:none;}
+  .probe-lead,.probe,.inline-meter{pointer-events:none}
+  svg.sim-running .flow{opacity:.95; animation:flowdash linear infinite;
+        filter:drop-shadow(0 0 3px var(--current));}
+  svg.sim-running .wire{stroke:#64748b}
+  @keyframes flowdash{to{stroke-dashoffset:-160}}
+
+  /* probes for voltmeter */
+  .probe{r:5}
+  .probe-red{fill:var(--probe-red); stroke:#fff; stroke-width:1}
+  .probe-black{fill:var(--probe-black); stroke:#fff; stroke-width:1}
+  .probe-lead{stroke-width:2; fill:none; stroke-dasharray:3 3}
+
+  /* ---------- Multimeter ---------- */
+  .meter{display:flex; gap:12px; align-items:stretch; margin-top:10px; flex-wrap:wrap}
+  .meter-body{background:#11161d; border:1px solid var(--line); border-radius:12px; padding:10px 12px; min-width:200px}
+  .meter-display{
+    background:#06210f; color:#7CFFB2; border:1px solid #0c3a1d; border-radius:7px;
+    font-family:"Consolas","Courier New",monospace; font-size:24px; font-weight:700;
+    padding:6px 10px; text-align:right; letter-spacing:1px; min-height:42px;
+  }
+  .meter-display .mu{font-size:14px; color:#4ade80; margin-left:5px}
+  .meter-modes{display:flex; gap:6px; margin-top:8px}
+  .meter-modes button{flex:1; padding:6px 4px; border-radius:7px; border:1px solid var(--line);
+      background:#0b1118; color:var(--muted); cursor:pointer; font-weight:700}
+  .meter-modes button.active{background:var(--warn); color:#241a02; border-color:var(--warn)}
+  .meter-hint{font-size:11.5px; color:var(--muted); margin-top:7px; min-height:30px}
+
+  /* ---------- Task / Aufgabe ---------- */
+  .task-desc{background:var(--panel2); border-left:3px solid var(--accent); border-radius:6px; padding:10px 12px; margin-bottom:12px}
+  .given-table,.q-table{width:100%; border-collapse:collapse; margin:6px 0 12px}
+  .given-table td,.q-table td,.q-table th{padding:6px 8px; border-bottom:1px solid var(--line); font-size:13.5px}
+  .given-table td:first-child{color:var(--muted); width:42%}
+  .given-table td:last-child{font-weight:700; color:var(--accent2); font-family:monospace}
+
+  .q-row{display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center;
+         padding:9px 0; border-bottom:1px solid var(--line)}
+  .q-row .q-label{font-size:14px}
+  .q-row .q-formula{color:var(--muted); font-size:12px}
+  .q-input{display:flex; align-items:center; gap:6px}
+  .q-input input{width:110px; text-align:right; font-family:monospace}
+  .q-input .unit{color:var(--muted); width:34px; font-family:monospace; font-weight:700}
+  .q-status{width:24px; text-align:center; font-size:18px}
+  .q-status.ok{color:var(--ok)} .q-status.bad{color:var(--bad)}
+
+  .result-banner{padding:10px 12px; border-radius:8px; margin:10px 0; font-weight:600; display:none}
+  .result-banner.show{display:block}
+  .result-banner.good{background:#06311a; color:#86efac; border:1px solid #14532d}
+  .result-banner.partial{background:#3a2c06; color:#fcd34d; border:1px solid #713f12}
+
+  /* Musterlösung */
+  .solution{display:none; margin-top:12px; background:#0c1117; border:1px solid var(--line); border-radius:10px; padding:14px}
+  .solution.show{display:block}
+  .solution h3{margin:0 0 4px; font-size:14px; color:var(--accent)}
+  .sol-step{margin:10px 0; padding-left:12px; border-left:2px solid var(--line)}
+  .sol-step .st-title{font-weight:700; font-size:13.5px; margin-bottom:3px}
+  .formula{font-family:"Cambria Math","Times New Roman",serif; font-size:16px; background:#11161d;
+           border-radius:6px; padding:6px 10px; display:inline-block; margin:3px 0}
+  .formula .res{color:var(--accent2); font-weight:700}
+  .frac{display:inline-flex; flex-direction:column; text-align:center; vertical-align:middle; margin:0 4px}
+  .frac .num{border-bottom:1.5px solid currentColor; padding:0 5px}
+  .frac .den{padding:0 5px}
+  sub{font-size:.72em}
+
+  .pill{display:inline-block; background:var(--panel2); border:1px solid var(--line); border-radius:20px;
+        padding:2px 10px; font-size:11.5px; color:var(--muted); margin:2px 4px 2px 0}
+
+  /* ---------- Editor ---------- */
+  .ed-grid{display:grid; grid-template-columns:1fr; gap:10px}
+  .ed-row{display:grid; grid-template-columns:160px 1fr; gap:10px; align-items:center}
+  .ed-row > label{padding-top:2px}
+  textarea{background:#0b1118; color:var(--text); border:1px solid var(--line); border-radius:7px;
+           padding:8px; font-family:inherit; font-size:14px; width:100%; resize:vertical}
+  .tree{background:#0c1117; border:1px solid var(--line); border-radius:8px; padding:10px}
+  .node{border:1px solid var(--line); border-radius:8px; padding:8px; margin:6px 0; background:#11161d}
+  .node.group{border-color:#334155; background:#0e1620}
+  .node-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .node-head .gtype{font-weight:700; font-size:12px; color:var(--accent2)}
+  .node-children{margin-left:14px; border-left:2px dashed #334155; padding-left:10px; margin-top:6px}
+  .leaf-fields{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .leaf-fields input{width:90px}
+  .q-pick{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px; margin-top:6px}
+  .q-pick label{display:flex; gap:6px; align-items:center; background:#0b1118; padding:6px 8px;
+                border:1px solid var(--line); border-radius:7px; color:var(--text); cursor:pointer}
+  .q-pick input{accent-color:var(--accent)}
+  .hidden{display:none!important}
+  .muted{color:var(--muted)}
+  .hr{height:1px; background:var(--line); margin:12px 0; border:0}
+  .row-inline{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .extras-box{background:#0c1117; border:1px solid var(--line); border-radius:8px; padding:10px; margin-top:8px}
+  .toast{position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#11161d;
+         border:1px solid var(--accent); color:var(--text); padding:10px 18px; border-radius:10px;
+         opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; z-index:50}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="ico">⚡</span> Elektro-Lernwerkstatt</h1>
+  <span class="sub">U · I · R · P — messen, berechnen, kontrollieren</span>
+  <div class="spacer"></div>
+  <div style="display:flex; align-items:center; gap:8px">
+    <label for="taskSelect" style="color:var(--muted)">Aufgabe:</label>
+    <select id="taskSelect" style="min-width:230px"></select>
+  </div>
+  <div class="modeswitch">
+    <button id="btnStudent" class="active">👩‍🎓 Schüler</button>
+    <button id="btnTeacher">👨‍🏫 Lehrkraft</button>
+  </div>
+</header>
+
+<!-- =================== SCHÜLER-ANSICHT =================== -->
+<main id="studentView">
+  <!-- linke Spalte: Schaltplan + Messgerät -->
+  <section class="card">
+    <h2>🔧 Schaltplan <span class="tag" id="circTypeTag"></span></h2>
+    <div class="toolbar">
+      <button class="btn primary small" id="btnPlay">▶ Stromfluss animieren</button>
+      <button class="btn small" id="btnValuesToggle">Werte einblenden</button>
+      <span class="muted" id="schemHint" style="font-size:12px"></span>
+    </div>
+    <div id="schemWrap">
+      <svg id="schematic" viewBox="0 0 600 360" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <!-- Multimeter -->
+    <div class="meter">
+      <div class="meter-body">
+        <div class="meter-display" id="meterDisplay">––––<span class="mu"></span></div>
+        <div class="meter-modes">
+          <button data-mode="U" class="active">V ⎓</button>
+          <button data-mode="I">A ⎓</button>
+          <button data-mode="R">Ω</button>
+        </div>
+        <div class="meter-hint" id="meterHint">Modus wählen, dann ein Bauteil bzw. die Quelle anklicken.</div>
+      </div>
+      <div class="meter-body" style="flex:1; min-width:170px">
+        <div style="font-weight:700; margin-bottom:6px">📟 Digital-Multimeter</div>
+        <div class="muted" style="font-size:12.5px">
+          <b>Spannung (V)</b> wird <u>parallel</u> zum Bauteil gemessen.<br>
+          <b>Strom (A)</b> wird <u>in Reihe</u> gemessen.<br>
+          <b>Widerstand (Ω)</b> am <u>stromlosen</u> Bauteil.
+        </div>
+        <div id="measureLabel" class="muted" style="font-size:12.5px; margin-top:6px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- rechte Spalte: Aufgabe -->
+  <section class="card">
+    <h2>📝 Aufgabe</h2>
+    <div class="task-desc">
+      <div style="font-weight:700; margin-bottom:4px" id="taskTitle"></div>
+      <div id="taskDescription"></div>
+    </div>
+
+    <div style="font-weight:700; font-size:13px; color:var(--muted); margin-bottom:2px">Gegeben:</div>
+    <table class="given-table"><tbody id="givenBody"></tbody></table>
+
+    <div style="font-weight:700; font-size:13px; color:var(--muted); margin-bottom:2px">Gesucht – trage deine berechneten Werte ein:</div>
+    <div id="questionList"></div>
+
+    <div class="row-inline" style="margin-top:12px">
+      <button class="btn ok" id="btnCheck">✓ Antworten prüfen</button>
+      <button class="btn" id="btnSolution">💡 Musterlösung &amp; Rechenweg</button>
+      <button class="btn ghost small" id="btnReset">↺ Zurücksetzen</button>
+    </div>
+
+    <div class="result-banner" id="resultBanner"></div>
+    <div class="solution" id="solutionBox"></div>
+  </section>
+</main>
+
+<!-- =================== LEHRKRAFT-ANSICHT =================== -->
+<main id="teacherView" class="hidden">
+  <section class="card">
+    <h2>🛠️ Aufgaben-Editor</h2>
+    <div class="ed-grid">
+      <div class="ed-row"><label>Titel</label><input type="text" id="edTitle" placeholder="z. B. Reihenschaltung berechnen"></div>
+      <div class="ed-row"><label>Aufgabentext</label><textarea id="edDesc" rows="3" placeholder="Beschreibung / Aufgabenstellung für die Schüler…"></textarea></div>
+      <div class="ed-row"><label>Schaltungsart</label>
+        <select id="edType">
+          <option value="grund">Grundstromkreis (1 Widerstand)</option>
+          <option value="reihe">Reihenschaltung</option>
+          <option value="parallel">Parallelschaltung</option>
+          <option value="gemischt">Gemischte Schaltung</option>
+        </select>
+      </div>
+      <div class="ed-row"><label>Quellenspannung U</label>
+        <div class="row-inline"><input type="number" id="edU" value="12" step="any" style="width:120px"> <span class="muted">V</span></div>
+      </div>
+    </div>
+
+    <hr class="hr">
+    <div style="font-weight:700; margin-bottom:4px">Widerstände / Aufbau</div>
+    <div class="muted" style="font-size:12.5px; margin-bottom:6px" id="builderHint"></div>
+    <div class="tree" id="builderTree"></div>
+
+    <hr class="hr">
+    <div style="font-weight:700; margin-bottom:4px">Gesuchte Größen (was die Schüler berechnen sollen)</div>
+    <div class="q-pick" id="qPickGlobal"></div>
+    <div style="font-weight:700; margin:10px 0 4px; font-size:13px" class="muted">Pro Widerstand:</div>
+    <div class="q-pick" id="qPickResistors"></div>
+
+    <div class="extras-box" id="extrasBox">
+      <div style="font-weight:700; margin-bottom:6px">Zusatzangaben (für Arbeit/Energie &amp; Wirkungsgrad)</div>
+      <div class="row-inline">
+        <label>Betriebsdauer t</label><input type="number" id="edTime" step="any" value="2" style="width:90px"> <span class="muted">h</span>
+        <label style="margin-left:10px">Strompreis</label><input type="number" id="edPrice" step="any" value="0.40" style="width:90px"> <span class="muted">€/kWh</span>
+        <label style="margin-left:10px">zugeführte Leistung P<sub>zu</sub></label><input type="number" id="edPzu" step="any" placeholder="z. B. 60" style="width:90px"> <span class="muted">W</span>
+      </div>
+      <div class="muted" style="font-size:11.5px; margin-top:5px">P<sub>zu</sub> nur nötig, wenn „Wirkungsgrad" gesucht ist. P<sub>ab</sub> = aufgenommene Gesamtleistung der Schaltung.</div>
+    </div>
+
+    <hr class="hr">
+    <div class="row-inline">
+      <button class="btn primary" id="edSave">💾 Aufgabe speichern</button>
+      <button class="btn" id="edNew">＋ Neue Aufgabe</button>
+      <button class="btn danger small" id="edDelete">🗑 Aufgabe löschen</button>
+      <div class="spacer" style="flex:1"></div>
+      <button class="btn small" id="edExport">⬇ Export (JSON)</button>
+      <button class="btn small" id="edExportOne">⬇ Diese Aufgabe</button>
+      <button class="btn small" id="edImport">⬆ Import (JSON)</button>
+      <input type="file" id="importFile" accept="application/json,.json" class="hidden">
+    </div>
+    <div class="muted" style="font-size:12px; margin-top:8px" id="edStatus"></div>
+  </section>
+
+  <section class="card">
+    <h2>👁 Vorschau</h2>
+    <div id="prevWrap" style="background:
+        radial-gradient(circle at 1px 1px,#20293480 1px,transparent 0) 0 0/22px 22px,#0c1117;
+        border:1px solid var(--line); border-radius:10px; overflow:hidden">
+      <svg id="previewSvg" viewBox="0 0 600 360" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto"></svg>
+    </div>
+    <div class="muted" style="font-size:12.5px; margin-top:8px">
+      Die Vorschau aktualisiert sich automatisch. Die berechneten Ergebnisse:
+    </div>
+    <table class="given-table" style="margin-top:6px"><tbody id="prevResults"></tbody></table>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================================
+   1) HILFSFUNKTIONEN — Zahlen & Einheiten (deutsches Format)
+   ============================================================================ */
+function deNum(x, sig){
+  sig = sig || 4;
+  if(!isFinite(x)) return "—";
+  if(x === 0) return "0";
+  const mag = Math.floor(Math.log10(Math.abs(x)));
+  const decimals = Math.max(0, sig - 1 - mag);
+  let s = x.toLocaleString("de-DE", {maximumFractionDigits: Math.min(decimals,6), minimumFractionDigits:0});
+  return s;
+}
+// Skaliert einen Wert auf eine passende Einheit (für Anzeige)
+const UNIT_TABLES = {
+  V:[["kV",1e3],["V",1],["mV",1e-3]],
+  A:[["A",1],["mA",1e-3],["µA",1e-6]],
+  "Ω":[["MΩ",1e6],["kΩ",1e3],["Ω",1]],
+  W:[["kW",1e3],["W",1],["mW",1e-3]],
+};
+function fmtVal(x, base){
+  if(!isFinite(x)) return {num:"—", unit:base};
+  const table = UNIT_TABLES[base];
+  if(!table || x===0) return {num:deNum(x), unit:base};
+  const ax = Math.abs(x);
+  for(const [u,f] of table){
+    if(ax >= f){ return {num:deNum(x/f), unit:u}; }
+  }
+  const last = table[table.length-1];
+  return {num:deNum(x/last[1]), unit:last[0]};
+}
+function fmtStr(x, base){ const r=fmtVal(x,base); return r.num+" "+r.unit; }
+function parseDE(str){
+  if(str==null) return NaN;
+  str = (""+str).trim().replace(/\s/g,"").replace(",",".");
+  if(str==="") return NaN;
+  return parseFloat(str);
+}
+
+/* ============================================================================
+   2) DATENMODELL
+   Block-Baum:
+     {kind:'r', id, R}                            – Widerstand (Blatt)
+     {kind:'series',  children:[...]}             – Reihenschaltung
+     {kind:'parallel',children:[...]}             – Parallelschaltung
+   Eine Aufgabe (Task):
+     {id,title,description,U, circuit:Block, extras:{t,price,Pzu},
+      ask:{Rges,Iges,Pges,W,kosten,eta}, askR:{<rid>:{U,I,P}} }
+   ============================================================================ */
+let _idc = 1;
+const newId = (p)=> (p||"n")+"_"+(_idc++)+"_"+Math.floor(Math.random()*1e4);
+
+function R(val){ return {kind:"r", id:newId("r"), R: val}; }
+function series(children){ return {kind:"series", children}; }
+function parallel(children){ return {kind:"parallel", children}; }
+
+// Blätter eines Baumes in Lesereihenfolge sammeln
+function leaves(block, out){
+  out = out || [];
+  if(block.kind==="r") out.push(block);
+  else block.children.forEach(c=>leaves(c,out));
+  return out;
+}
+// Widerstände nach Reihenfolge mit R1..Rn beschriften
+function relabel(circuit){
+  const ls = leaves(circuit);
+  ls.forEach((l,i)=> l.label = "R"+(i+1));
+  return ls;
+}
+
+/* ----- LÖSER: berechnet R, U, I, P für jeden Block ----- */
+function computeR(block){
+  if(block.kind==="r"){ block.Rt = block.R; return block.Rt; }
+  const rs = block.children.map(computeR);
+  if(block.kind==="series") block.Rt = rs.reduce((a,b)=>a+b,0);
+  else block.Rt = 1 / rs.reduce((a,b)=>a + 1/b, 0);
+  return block.Rt;
+}
+function propagate(block, I){
+  block.I = I;
+  block.U = I * block.Rt;
+  block.P = block.U * block.I;
+  if(block.kind==="r") return;
+  if(block.kind==="series"){
+    block.children.forEach(c=> propagate(c, I));     // gleicher Strom
+  }else{
+    block.children.forEach(c=> propagate(c, block.U / c.Rt)); // gleiche Spannung
+  }
+}
+// Komplettlösung; gibt Totalwerte zurück und annotiert den Baum
+function solve(task){
+  const circuit = task.circuit;
+  relabel(circuit);
+  const Rges = computeR(circuit);
+  const Iges = task.U / Rges;
+  // Quellenspannung liegt am Wurzelblock an:
+  propagate(circuit, Iges);
+  const Pges = task.U * Iges;
+  const res = {Rges, Iges, Pges, U: task.U};
+  const ex = task.extras || {};
+  if(ex.t != null){
+    res.W = Pges * ex.t;               // Wh  (P in W, t in h)
+    res.WkWh = res.W/1000;
+    if(ex.price != null) res.kosten = res.WkWh * ex.price; // €
+  }
+  if(ex.Pzu != null && ex.Pzu>0){
+    res.eta = Pges / ex.Pzu;           // Wirkungsgrad (Pab=Pges)
+  }
+  res.t = ex.t; res.price = ex.price; res.Pzu = ex.Pzu;
+  return res;
+}
+
+/* ============================================================================
+   3) AUTO-LAYOUT + SVG-RENDERER  (Schaltplan im VALIS-Stil)
+   ============================================================================ */
+const LEAF_W = 96, LEAF_H = 48, GAP = 30, BUS_PAD = 26, RAIL_GAP = 70;
+const SVGNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent){
+  const e = document.createElementNS(SVGNS, tag);
+  if(attrs) for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+
+// Layout-Knoten berechnen (Größe + relative Positionen der Kinder)
+function layout(block){
+  if(block.kind==="r"){
+    return {block, type:"r", w:LEAF_W, h:LEAF_H, cy:LEAF_H/2};
+  }
+  const kids = block.children.map(layout);
+  if(block.kind==="series"){
+    const h = Math.max.apply(null, kids.map(k=>k.h));
+    let x=0;
+    kids.forEach((k,i)=>{ k.ox = x + (i>0?GAP:0); k.oy=(h-k.h)/2; x = k.ox + k.w; });
+    return {block, type:"series", kids, w:x, h, cy:h/2};
+  } else {
+    const maxw = Math.max.apply(null, kids.map(k=>k.w));
+    const w = maxw + 2*BUS_PAD;
+    let y=0;
+    kids.forEach((k,i)=>{ k.oy = y + (i>0?GAP:0); k.ox = BUS_PAD; y = k.oy + k.h; });
+    return {block, type:"parallel", kids, w, h:y, cy:y/2};
+  }
+}
+
+// Resultat-Container für Render: erzeugt Draht-, Symbol- und Flow-Elemente
+function renderNode(node, ox, oy, g, store, showValues){
+  const b = node.block;
+  if(node.type==="r"){
+    const cx = ox + node.w/2, cy = oy + node.cy;
+    const bodyW = 54, bodyH = 18;
+    const left = ox, right = ox + node.w;
+    // Anschlussdrähte
+    addWire(g, store, left, cy, cx-bodyW/2, cy, b.I);
+    addWire(g, store, cx+bodyW/2, cy, right, cy, b.I);
+    // Widerstandskörper (klickbar)
+    const grp = el("g", {class:"res-hit", "data-rid":b.id}, g);
+    el("rect", {x:cx-bodyW/2, y:cy-bodyH/2, width:bodyW, height:bodyH, rx:2, class:"sym-rect"}, grp);
+    // Beschriftung
+    const t1 = el("text", {x:cx, y:cy-bodyH/2-7, "text-anchor":"middle", class:"lbl"}, grp);
+    t1.textContent = b.label;
+    if(showValues){
+      const t2 = el("text", {x:cx, y:cy+bodyH/2+15, "text-anchor":"middle", class:"lbl-val"}, grp);
+      t2.textContent = fmtStr(b.R, "Ω");
+    }
+    store.resistors.push({id:b.id, cx, cy, left, right, bodyW, bodyH, node});
+    return {left:{x:left,y:cy}, right:{x:right,y:cy}};
+  }
+  if(node.type==="series"){
+    let prev=null;
+    node.kids.forEach(k=>{
+      const t = renderNode(k, ox+k.ox, oy+k.oy, g, store, showValues);
+      if(prev) addWire(g, store, prev.right.x, prev.right.y, t.left.x, t.left.y, b.I);
+      prev = t;
+    });
+    const cy = oy + node.cy;
+    return {left:{x:ox, y:cy}, right:{x:ox+node.w, y:cy}};
+  }
+  // parallel
+  const leftX = ox, rightX = ox + node.w;
+  const spineY = [];
+  node.kids.forEach(k=>{
+    const t = renderNode(k, ox+k.ox, oy+k.oy, g, store, showValues);
+    // Anschluss-Drähte an die Busschienen (Strom durch Zweig = Kindstrom)
+    addWire(g, store, leftX, t.left.y, t.left.x, t.left.y, k.block.I);
+    addWire(g, store, t.right.x, t.right.y, rightX, t.right.y, k.block.I);
+    spineY.push(t.left.y);
+  });
+  const cy = oy + node.cy;
+  const yMin = Math.min.apply(null, spineY.concat([cy]));
+  const yMax = Math.max.apply(null, spineY.concat([cy]));
+  // Busschienen (tragen Gesamtstrom des Blocks)
+  addWire(g, store, leftX, yMin, leftX, yMax, b.I);
+  addWire(g, store, rightX, yMin, rightX, yMax, b.I);
+  return {left:{x:leftX, y:cy}, right:{x:rightX, y:cy}};
+}
+
+// Draht + animierte Flow-Linie hinzufügen
+function addWire(g, store, x1,y1,x2,y2, current){
+  el("line", {x1,y1,x2,y2, class:"wire"}, g);
+  const f = el("line", {x1,y1,x2,y2, class:"flow"});
+  store.flowLayer.appendChild(f);
+  store.flows.push({el:f, current});
+}
+
+// Spannungsquelle (Batterie) horizontal auf der unteren Schiene
+function drawSource(g, store, x1, x2, y, U, showValues){
+  const mid = (x1+x2)/2;
+  // Drähte zur Quelle
+  addWire(g, store, x1, y, mid-26, y, store.Iges);
+  addWire(g, store, mid+26, y, x2, y, store.Iges);
+  const src = el("g", {class:"src-hit", "data-src":"1"}, g);
+  // Batterie-Symbol: lange Linie (+) , kurze dicke Linie (−)
+  el("line", {x1:mid-12, y1:y-16, x2:mid-12, y2:y+16, class:"sym-line"}, src); // lang +
+  el("line", {x1:mid+12, y1:y-9,  x2:mid+12, y2:y+9, class:"sym-line", "stroke-width":5}, src); // kurz -
+  // Markierungen + / -
+  const p = el("text",{x:mid-22, y:y-8, class:"lbl-small"},src); p.textContent="+";
+  const m = el("text",{x:mid+16, y:y-8, class:"lbl-small"},src); m.textContent="–";
+  const lab = el("text",{x:mid, y:y+34, "text-anchor":"middle", class:"lbl"},src);
+  lab.textContent = "U" + (showValues? " = "+fmtStr(U,"V") : "");
+}
+
+// Komplette Schaltung in ein SVG zeichnen
+function drawCircuit(svg, task, opts){
+  opts = opts || {};
+  const showValues = opts.showValues;
+  // SVG leeren
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  solve(task);
+
+  const root = layout(task.circuit);
+  const X0 = 60, Y0 = 40;
+  const store = {resistors:[], flows:[], flowLayer:el("g",{},null), Iges:task.circuit.I};
+
+  const g = el("g", {}, svg);             // Drähte+Symbole
+  svg.appendChild(store.flowLayer);       // Flow-Layer oben drauf
+
+  const term = renderNode(root, X0, Y0, g, store, showValues);
+  // Außenschleife
+  const railY = Y0 + root.h + RAIL_GAP;
+  addWire(g, store, term.left.x, term.left.y, term.left.x, railY, store.Iges);
+  addWire(g, store, term.right.x, term.right.y, term.right.x, railY, store.Iges);
+  drawSource(g, store, term.left.x, term.right.x, railY, task.U, showValues);
+
+  // viewBox an Inhalt anpassen
+  const pad = 30;
+  const bb = svg.getBBox ? null : null;
+  // getBBox erst nach Einfügen ins DOM zuverlässig -> wir berechnen grob:
+  const minX = 0, minY = 0;
+  const W = term.right.x + 80, H = railY + 60;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  // Klick-Handler für Messung
+  store.svg = svg; store.task = task;
+  return store;
+}
+
+/* ============================================================================
+   4) STROMFLUSS-ANIMATION
+   ============================================================================ */
+function applyFlowSpeed(store){
+  // Geschwindigkeit ~ Stromstärke (mehr Strom = schneller)
+  const Imax = store.flows.reduce((m,f)=> Math.max(m, Math.abs(f.current||0)), 1e-9);
+  store.flows.forEach(f=>{
+    const ratio = Math.abs(f.current||0)/Imax;        // 0..1
+    const dur = 2.6 - 2.0*ratio;                       // 0.6s (schnell) .. 2.6s (langsam)
+    f.el.style.animationDuration = dur.toFixed(2)+"s";
+  });
+}
+
+/* ============================================================================
+   5) MUSTERLÖSUNG / RECHENWEG (HTML mit Formeln)
+   ============================================================================ */
+// Lesbares Label für einen (Teil-)Block: R1, (R2∥R3), (R1+R2) ...
+function blockLabel(block){
+  if(block.kind==="r") return block.label;
+  const sep = block.kind==="series" ? " + " : " ∥ ";
+  return "(" + block.children.map(blockLabel).join(sep) + ")";
+}
+// Sammelt Rechenschritte für Rges (innen nach außen)
+function rgesSteps(block, steps){
+  steps = steps || [];
+  if(block.kind==="r") return steps;
+  block.children.forEach(c=> rgesSteps(c, steps));
+  if(block.kind==="series"){
+    const terms = block.children.map(c=> deNum(c.Rt));
+    steps.push({
+      title:"Reihenschaltung "+blockLabel(block),
+      html:`R = R<sub>1</sub> + R<sub>2</sub> + … = ${block.children.map(c=>deNum(c.Rt)).join(" Ω + ")} Ω = <span class="res">${fmtStr(block.Rt,"Ω")}</span>`
+    });
+  } else {
+    const inv = block.children.map(c=> `<span style="white-space:nowrap">1/${deNum(c.Rt)} Ω</span>`).join(" + ");
+    let extra = "";
+    if(block.children.length===2){
+      const a=block.children[0].Rt, b=block.children[1].Rt;
+      extra = `<div style="margin-top:4px">bzw. R = <span class="frac"><span class="num">R<sub>1</sub>·R<sub>2</sub></span><span class="den">R<sub>1</sub>+R<sub>2</sub></span></span> = <span class="frac"><span class="num">${deNum(a)}·${deNum(b)}</span><span class="den">${deNum(a)}+${deNum(b)}</span></span> Ω = <span class="res">${fmtStr(block.Rt,"Ω")}</span></div>`;
+    }
+    steps.push({
+      title:"Parallelschaltung "+blockLabel(block),
+      html:`<span class="frac"><span class="num">1</span><span class="den">R</span></span> = ${inv} ⟹ R = <span class="res">${fmtStr(block.Rt,"Ω")}</span>${extra}`
+    });
+  }
+  return steps;
+}
+
+function buildSolutionHTML(task){
+  const r = solve(task);
+  const ask = task.ask || {};
+  const askR = task.askR || {};
+  let h = `<h3>💡 Musterlösung mit Rechenweg</h3>`;
+
+  // 1) Gesamtwiderstand
+  if(task.circuit.kind!=="r"){
+    h += `<div class="sol-step"><div class="st-title">1) Gesamtwiderstand R<sub>ges</sub></div>`;
+    rgesSteps(task.circuit).forEach(s=>{
+      h += `<div style="margin:5px 0"><span class="muted" style="font-size:12px">${s.title}</span><br><span class="formula">${s.html}</span></div>`;
+    });
+    h += `<div class="formula">R<sub>ges</sub> = <span class="res">${fmtStr(r.Rges,"Ω")}</span></div></div>`;
+  } else {
+    h += `<div class="sol-step"><div class="st-title">1) Gesamtwiderstand</div>
+      <div class="formula">R<sub>ges</sub> = R<sub>1</sub> = <span class="res">${fmtStr(r.Rges,"Ω")}</span></div></div>`;
+  }
+
+  // 2) Gesamtstrom (Ohmsches Gesetz)
+  h += `<div class="sol-step"><div class="st-title">2) Gesamtstrom I<sub>ges</sub> (Ohmsches Gesetz)</div>
+    <div class="formula">I<sub>ges</sub> = <span class="frac"><span class="num">U</span><span class="den">R<sub>ges</sub></span></span> = <span class="frac"><span class="num">${deNum(task.U)} V</span><span class="den">${deNum(r.Rges)} Ω</span></span> = <span class="res">${fmtStr(r.Iges,"A")}</span></div></div>`;
+
+  // 3) Einzelwerte je Widerstand
+  const ls = leaves(task.circuit);
+  if(ls.length>1){
+    h += `<div class="sol-step"><div class="st-title">3) Werte der einzelnen Widerstände</div>`;
+    ls.forEach(l=>{
+      h += `<div style="margin:7px 0"><b>${l.label}</b> (R = ${fmtStr(l.R,"Ω")}):<br>
+        <span class="formula">I<sub>${subOf(l.label)}</sub> = ${fmtStr(l.I,"A")}</span>
+        <span class="formula">U<sub>${subOf(l.label)}</sub> = R·I = ${deNum(l.R)} Ω · ${deNum(l.I)} A = <span class="res">${fmtStr(l.U,"V")}</span></span>
+        <span class="formula">P<sub>${subOf(l.label)}</sub> = U·I = <span class="res">${fmtStr(l.P,"W")}</span></span></div>`;
+    });
+    h += `</div>`;
+  }
+
+  // 4) Gesamtleistung
+  h += `<div class="sol-step"><div class="st-title">4) Gesamtleistung P<sub>ges</sub></div>
+    <div class="formula">P<sub>ges</sub> = U · I<sub>ges</sub> = ${deNum(task.U)} V · ${deNum(r.Iges)} A = <span class="res">${fmtStr(r.Pges,"W")}</span></div>
+    <div class="muted" style="font-size:12px">auch: P = R·I² = U²/R</div></div>`;
+
+  // 5) Arbeit / Energiekosten
+  if(r.W != null){
+    h += `<div class="sol-step"><div class="st-title">5) Elektrische Arbeit &amp; Energiekosten</div>
+      <div class="formula">W = P · t = ${fmtStr(r.Pges,"W")} · ${deNum(r.t)} h = <span class="res">${deNum(r.WkWh)} kWh</span></div>`;
+    if(r.kosten!=null){
+      h += `<div class="formula">Kosten = W · Preis = ${deNum(r.WkWh)} kWh · ${deNum(r.price)} €/kWh = <span class="res">${deNum(r.kosten,4)} €</span></div>`;
+    }
+    h += `</div>`;
+  }
+  // 6) Wirkungsgrad
+  if(r.eta != null){
+    h += `<div class="sol-step"><div class="st-title">6) Wirkungsgrad η</div>
+      <div class="formula">η = <span class="frac"><span class="num">P<sub>ab</sub></span><span class="den">P<sub>zu</sub></span></span> = <span class="frac"><span class="num">${deNum(r.Pges)} W</span><span class="den">${deNum(r.Pzu)} W</span></span> = ${deNum(r.eta,3)} = <span class="res">${deNum(r.eta*100,3)} %</span></div></div>`;
+  }
+  return h;
+}
+function subOf(label){ return label.replace(/^R/,""); }
+
+/* ============================================================================
+   6) FRAGEN-DEFINITION & PRÜFUNG
+   Erzeugt aus task.ask / task.askR die Liste der zu beantwortenden Größen.
+   ============================================================================ */
+function buildQuestions(task){
+  const r = solve(task);
+  const qs = [];
+  const ask = task.ask||{}, askR = task.askR||{};
+  if(ask.Rges)   qs.push({key:"Rges", label:"Gesamtwiderstand R<sub>ges</sub>", base:"Ω", val:r.Rges, formula:"R₁+R₂… bzw. 1/R…"});
+  if(ask.Iges)   qs.push({key:"Iges", label:"Gesamtstrom I<sub>ges</sub>", base:"A", val:r.Iges, formula:"I = U / R"});
+  // pro Widerstand
+  const ls = leaves(task.circuit);
+  ls.forEach(l=>{
+    const a = askR[l.id]||{};
+    if(a.U) qs.push({key:"U_"+l.id, label:"Spannung U<sub>"+subOf(l.label)+"</sub> an "+l.label, base:"V", val:l.U, formula:"U = R · I"});
+    if(a.I) qs.push({key:"I_"+l.id, label:"Strom I<sub>"+subOf(l.label)+"</sub> durch "+l.label, base:"A", val:l.I, formula:"I = U / R"});
+    if(a.P) qs.push({key:"P_"+l.id, label:"Leistung P<sub>"+subOf(l.label)+"</sub> an "+l.label, base:"W", val:l.P, formula:"P = U · I"});
+  });
+  if(ask.Pges)   qs.push({key:"Pges", label:"Gesamtleistung P<sub>ges</sub>", base:"W", val:r.Pges, formula:"P = U · I"});
+  if(ask.W && r.WkWh!=null)    qs.push({key:"W", label:"Elektrische Arbeit W", base:"kWh", val:r.WkWh, fixedUnit:"kWh", formula:"W = P · t"});
+  if(ask.kosten && r.kosten!=null) qs.push({key:"kosten", label:"Energiekosten", base:"€", val:r.kosten, fixedUnit:"€", formula:"K = W · Preis"});
+  if(ask.eta && r.eta!=null)   qs.push({key:"eta", label:"Wirkungsgrad η", base:"%", val:r.eta*100, fixedUnit:"%", formula:"η = Pab / Pzu"});
+  // Anzeige-Einheit + Erwartungswert in dieser Einheit festlegen
+  qs.forEach(q=>{
+    if(q.fixedUnit){ q.dispUnit=q.fixedUnit; q.dispVal=q.val; }
+    else{
+      const f = fmtVal(q.val, q.base);
+      const factor = (UNIT_TABLES[q.base]||[]).find(u=>u[0]===f.unit);
+      q.dispUnit = f.unit;
+      q.dispVal = factor ? q.val/factor[1] : q.val;
+    }
+  });
+  return qs;
+}
+
+/* ============================================================================
+   7) BEISPIEL-AUFGABEN (Startdatensatz)
+   ============================================================================ */
+function defaultTasks(){
+  const t = [];
+  // Grundstromkreis
+  let c1 = R(220);
+  t.push(wrap("Grundstromkreis – Ohmsches Gesetz", c1, 12, {
+    description:"An einem Widerstand R₁ = 220 Ω liegt die Spannung U = 12 V. Berechne den Strom und die Leistung. Kontrolliere anschließend mit dem Multimeter und der Simulation.",
+    ask:{Iges:true, Pges:true}, askR:{}, type:"grund"
+  }));
+  // Reihenschaltung
+  let r1=R(100), r2=R(330), r3=R(220);
+  let c2 = series([r1,r2,r3]);
+  t.push(wrap("Reihenschaltung – Spannungsteiler", c2, 24, {
+    description:"Drei Widerstände R₁ = 100 Ω, R₂ = 330 Ω und R₃ = 220 Ω sind in Reihe an U = 24 V geschaltet. Berechne R_ges, den Strom sowie die Teilspannungen.",
+    ask:{Rges:true, Iges:true}, askR:{[r1.id]:{U:true},[r2.id]:{U:true},[r3.id]:{U:true}}, type:"reihe"
+  }));
+  // Parallelschaltung
+  let p1=R(100), p2=R(150), p3=R(300);
+  let c3 = parallel([p1,p2,p3]);
+  t.push(wrap("Parallelschaltung – Stromteiler", c3, 12, {
+    description:"Drei Widerstände sind parallel an U = 12 V geschaltet: R₁ = 100 Ω, R₂ = 150 Ω, R₃ = 300 Ω. Berechne den Gesamtwiderstand, die Teilströme und den Gesamtstrom.",
+    ask:{Rges:true, Iges:true}, askR:{[p1.id]:{I:true},[p2.id]:{I:true},[p3.id]:{I:true}}, type:"parallel"
+  }));
+  // Gemischte Schaltung: R1 in Reihe mit (R2 || R3)
+  let g1=R(47), g2=R(100), g3=R(100);
+  let c4 = series([g1, parallel([g2,g3])]);
+  t.push(wrap("Gemischte Schaltung – Gruppenschaltung", c4, 9, {
+    description:"R₁ = 47 Ω liegt in Reihe zur Parallelschaltung aus R₂ = 100 Ω und R₃ = 100 Ω. Quelle U = 9 V. Berechne R_ges, I_ges und die Leistung an R₁.",
+    ask:{Rges:true, Iges:true, Pges:true}, askR:{[g1.id]:{P:true}}, type:"gemischt"
+  }));
+  // Arbeit & Wirkungsgrad
+  let m1=R(48);
+  t.push(wrap("Heizung – Arbeit, Kosten & Wirkungsgrad", m1, 230, {
+    description:"Ein Heizwiderstand (R = 48 Ω) wird an U = 230 V betrieben (t = 2 h, Strompreis 0,40 €/kWh, zugeführte Leistung P_zu = 1150 W). Berechne Leistung, Arbeit, Kosten und Wirkungsgrad.",
+    ask:{Iges:true, Pges:true, W:true, kosten:true, eta:true}, askR:{}, type:"grund",
+    extras:{t:2, price:0.40, Pzu:1150}
+  }));
+  return t;
+
+  function wrap(title, circuit, U, opt){
+    return {
+      id:newId("task"), title, description:opt.description||"", U, circuit,
+      type:opt.type||"gemischt", extras:opt.extras||{},
+      ask:opt.ask||{}, askR:opt.askR||{}
+    };
+  }
+}
+
+/* ============================================================================
+   8) PERSISTENZ (localStorage)
+   ============================================================================ */
+const LS_KEY = "elektro_lernwerkstatt_tasks_v1";
+function loadTasks(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){ const arr = JSON.parse(raw); if(Array.isArray(arr)&&arr.length) return arr; }
+  }catch(e){}
+  return defaultTasks();
+}
+function saveTasks(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(STATE.tasks)); }catch(e){ toast("Speichern fehlgeschlagen"); }
+}
+
+/* ============================================================================
+   9) GLOBALER ZUSTAND & DOM-REFERENZEN
+   ============================================================================ */
+const STATE = {
+  tasks: [],
+  currentId: null,
+  meterMode: "U",
+  measureTarget: null,   // {kind:'r', id} | {kind:'src'}
+  showValues: false,
+  playing: false,
+  store: null,           // render store der Schüleransicht
+  editing: null,         // Editor-Arbeitskopie
+};
+const $ = (id)=>document.getElementById(id);
+function curTask(){ return STATE.tasks.find(t=>t.id===STATE.currentId) || STATE.tasks[0]; }
+
+/* ============================================================================
+   10) SCHÜLER-ANSICHT RENDERN
+   ============================================================================ */
+function renderStudent(){
+  const task = curTask(); if(!task) return;
+  STATE.currentId = task.id;
+  $("taskTitle").textContent = task.title;
+  $("taskDescription").textContent = task.description;
+  $("circTypeTag").textContent = typeName(task.type) + " · U = "+fmtStr(task.U,"V");
+
+  // Schaltplan zeichnen
+  const svg = $("schematic");
+  STATE.store = drawCircuit(svg, task, {showValues: STATE.showValues});
+  applyFlowSpeed(STATE.store);
+  attachMeterHandlers(STATE.store);
+  if(STATE.playing) svg.classList.add("sim-running"); else svg.classList.remove("sim-running");
+  refreshMeterButtons();
+  clearMeasurement();
+
+  // Gegeben-Tabelle
+  const gb = $("givenBody"); gb.innerHTML = "";
+  addRow(gb, "Quellenspannung U", fmtStr(task.U,"V"));
+  leaves(task.circuit).forEach(l=> addRow(gb, l.label, fmtStr(l.R,"Ω")));
+  const ex = task.extras||{};
+  if(ex.t!=null) addRow(gb,"Betriebsdauer t", deNum(ex.t)+" h");
+  if(ex.price!=null) addRow(gb,"Strompreis", deNum(ex.price)+" €/kWh");
+  if(ex.Pzu!=null) addRow(gb,"zugeführte Leistung P<sub>zu</sub>", fmtStr(ex.Pzu,"W"));
+
+  // Fragen
+  renderQuestions(task);
+
+  // zurücksetzen
+  $("resultBanner").className = "result-banner";
+  $("solutionBox").className = "solution";
+  $("solutionBox").innerHTML = "";
+}
+function typeName(t){
+  return {grund:"Grundstromkreis", reihe:"Reihenschaltung", parallel:"Parallelschaltung", gemischt:"Gemischte Schaltung"}[t] || "Schaltung";
+}
+function addRow(tbody, a, b){
+  const tr = document.createElement("tr");
+  const td1=document.createElement("td"); td1.innerHTML=a;
+  const td2=document.createElement("td"); td2.textContent=b;
+  tr.appendChild(td1); tr.appendChild(td2); tbody.appendChild(tr);
+}
+function renderQuestions(task){
+  const list = $("questionList"); list.innerHTML="";
+  const qs = buildQuestions(task);
+  STATE.questions = qs;
+  if(qs.length===0){ list.innerHTML = '<div class="muted">Für diese Aufgabe sind keine Rechengrößen festgelegt.</div>'; return; }
+  qs.forEach(q=>{
+    const row = document.createElement("div"); row.className="q-row";
+    const unit = q.dispUnit || q.fixedUnit || q.base;
+    row.innerHTML = `
+      <div><div class="q-label">${q.label}</div><div class="q-formula">${q.formula||""}</div></div>
+      <div class="q-input">
+        <input type="text" inputmode="decimal" data-qkey="${q.key}" placeholder="?">
+        <span class="unit">${unit}</span>
+        <span class="q-status" data-status="${q.key}"></span>
+      </div>`;
+    list.appendChild(row);
+  });
+}
+
+/* ----- Antworten prüfen ----- */
+function checkAnswers(){
+  const task = curTask();
+  const qs = STATE.questions||[];
+  let correct=0, answered=0;
+  qs.forEach(q=>{
+    const inp = document.querySelector(`input[data-qkey="${q.key}"]`);
+    const st = document.querySelector(`[data-status="${q.key}"]`);
+    const raw = inp.value.trim();
+    if(raw===""){ st.textContent=""; st.className="q-status"; return; }
+    answered++;
+    const userVal = parseDE(raw);                 // Eingabe in der angezeigten Einheit
+    const expected = q.dispVal!=null ? q.dispVal : q.val;
+    const tol = Math.max(Math.abs(expected)*0.02, 1e-9); // 2% Toleranz
+    if(isFinite(userVal) && Math.abs(userVal-expected) <= tol){
+      st.textContent="✓"; st.className="q-status ok"; correct++;
+    }else{
+      st.textContent="✗"; st.className="q-status bad";
+    }
+  });
+  const banner = $("resultBanner");
+  if(answered===0){ banner.className="result-banner show partial"; banner.textContent="Bitte zuerst Werte eintragen."; return; }
+  if(correct===qs.length){
+    banner.className="result-banner show good";
+    banner.textContent=`✓ Sehr gut! Alle ${qs.length} Werte sind richtig. Überprüfe sie zur Kontrolle mit dem Multimeter und der Animation.`;
+  }else{
+    banner.className="result-banner show partial";
+    banner.textContent=`${correct} von ${qs.length} richtig. Tipp: Miss die Werte mit dem Multimeter und schau dir die Musterlösung an.`;
+  }
+}
+
+/* ============================================================================
+   11) MULTIMETER
+   ============================================================================ */
+function attachMeterHandlers(store){
+  store.svg.querySelectorAll(".res-hit").forEach(g=>{
+    g.addEventListener("click", ()=>{ STATE.measureTarget={kind:"r", id:g.getAttribute("data-rid")}; updateMeter(); });
+  });
+  const src = store.svg.querySelector(".src-hit");
+  if(src) src.addEventListener("click", ()=>{ STATE.measureTarget={kind:"src"}; updateMeter(); });
+}
+function refreshMeterButtons(){
+  document.querySelectorAll(".meter-modes button").forEach(b=>{
+    b.classList.toggle("active", b.getAttribute("data-mode")===STATE.meterMode);
+  });
+}
+function clearMeasurement(){
+  const svg = STATE.store && STATE.store.svg; if(!svg) return;
+  svg.querySelectorAll(".measured").forEach(e=>e.classList.remove("measured"));
+  svg.querySelectorAll(".probe,.probe-lead,.inline-meter").forEach(e=>e.remove());
+  $("meterDisplay").innerHTML = '––––<span class="mu"></span>';
+  $("measureLabel").textContent = "";
+}
+function updateMeter(){
+  const task = curTask(); const store = STATE.store; if(!store) return;
+  clearMeasurement();
+  const mode = STATE.meterMode, tgt = STATE.measureTarget;
+  if(!tgt){ return; }
+  let value, label, baseUnit;
+  if(tgt.kind==="src"){
+    if(mode==="U"){ value=task.U; label="Quellenspannung U"; baseUnit="V"; }
+    else if(mode==="I"){ value=task.circuit.I; label="Gesamtstrom I_ges"; baseUnit="A"; }
+    else { value=task.circuit.Rt; label="Gesamtwiderstand R_ges"; baseUnit="Ω"; }
+    highlightSource(store, mode);
+  }else{
+    const l = leaves(task.circuit).find(x=>x.id===tgt.id);
+    if(!l) return;
+    if(mode==="U"){ value=l.U; label="Spannung an "+l.label; baseUnit="V"; }
+    else if(mode==="I"){ value=l.I; label="Strom durch "+l.label; baseUnit="A"; }
+    else { value=l.R; label="Widerstand "+l.label; baseUnit="Ω"; }
+    highlightResistor(store, tgt.id, mode);
+  }
+  const f = fmtVal(value, baseUnit);
+  $("meterDisplay").innerHTML = `${f.num}<span class="mu">${f.unit}</span>`;
+  const hints = {U:"Spannung → Messgerät parallel.", I:"Strom → Messgerät in Reihe.", R:"Widerstand → Bauteil stromlos messen."};
+  $("measureLabel").textContent = label;
+  $("meterHint").textContent = hints[mode];
+}
+function highlightResistor(store, rid, mode){
+  const info = store.resistors.find(r=>r.id===rid); if(!info) return;
+  const grp = store.svg.querySelector(`.res-hit[data-rid="${rid}"]`);
+  if(grp) grp.classList.add("measured");
+  const layer = store.svg;
+  if(mode==="U"){
+    // Voltmeter parallel: zwei Messspitzen an den Anschlüssen
+    drawProbe(layer, info.left, info.right, info.cy);
+  }else if(mode==="I"){
+    // Amperemeter in Reihe: kleines A-Symbol am linken Anschluss
+    drawInlineMeter(layer, info.left, info.cy, "A");
+  }
+}
+function highlightSource(store, mode){
+  const src = store.svg.querySelector(".src-hit");
+  if(src) src.classList.add("measured");
+}
+function drawProbe(layer, left, right, cy){
+  // rote + schwarze Messspitze über dem Bauteil
+  const y = cy - 40;
+  const red = el("circle", {cx:left.x, cy:left.y, r:5, class:"probe probe-red"}, layer);
+  const blk = el("circle", {cx:right.x, cy:right.y, r:5, class:"probe probe-black"}, layer);
+  el("path", {d:`M ${left.x} ${left.y} L ${left.x} ${y} L ${right.x} ${y} L ${right.x} ${right.y}`,
+              class:"probe-lead", stroke:"var(--accent2)"}, layer);
+  const t = el("text",{x:(left.x+right.x)/2, y:y-6, "text-anchor":"middle", class:"lbl-small", fill:"var(--accent2)"}, layer);
+  t.textContent="V";
+}
+function drawInlineMeter(layer, pt, cy, letter){
+  const g = el("g",{class:"inline-meter"},layer);
+  el("circle",{cx:pt.x, cy:pt.y-26, r:11, fill:"#0c1117", stroke:"var(--accent2)", "stroke-width":2.4},g);
+  const t = el("text",{x:pt.x, y:pt.y-21, "text-anchor":"middle", class:"lbl", fill:"var(--accent2)"},g);
+  t.textContent=letter;
+  el("line",{x1:pt.x, y1:pt.y, x2:pt.x, y2:pt.y-15, stroke:"var(--accent2)","stroke-width":2.4, "stroke-dasharray":"3 3"},g);
+}
+
+/* ============================================================================
+   12) EDITOR (Lehrkraft)
+   ============================================================================ */
+function cloneTask(t){ return JSON.parse(JSON.stringify(t)); }
+
+function openEditor(task){
+  STATE.editing = cloneTask(task);
+  // sicherstellen: ids vorhanden
+  relabel(STATE.editing.circuit);
+  fillEditorForm();
+  renderBuilder();
+  renderQPick();
+  updatePreview();
+}
+function fillEditorForm(){
+  const t = STATE.editing;
+  $("edTitle").value = t.title||"";
+  $("edDesc").value = t.description||"";
+  $("edType").value = t.type||"gemischt";
+  $("edU").value = t.U;
+  const ex = t.extras||{};
+  $("edTime").value = ex.t!=null?ex.t:"";
+  $("edPrice").value = ex.price!=null?ex.price:"";
+  $("edPzu").value = ex.Pzu!=null?ex.Pzu:"";
+  updateBuilderHint();
+}
+function updateBuilderHint(){
+  const type = $("edType").value;
+  const hints = {
+    grund:"Genau ein Widerstand. Trage den Wert ein.",
+    reihe:"Beliebig viele Widerstände in Reihe. Mit '+ Widerstand' ergänzen.",
+    parallel:"Beliebig viele parallele Widerstände. Mit '+ Widerstand' ergänzen.",
+    gemischt:"Frei verschachtelbar: Widerstände und Gruppen (Reihe/Parallel) beliebig kombinieren."
+  };
+  $("builderHint").textContent = hints[type]||"";
+}
+
+// Erzeugt beim Wechsel der Schaltungsart eine passende Grundstruktur
+function presetCircuit(type){
+  if(type==="grund") return R(220);
+  if(type==="reihe") return series([R(100),R(220)]);
+  if(type==="parallel") return parallel([R(100),R(220)]);
+  return series([R(47), parallel([R(100),R(100)])]);
+}
+
+// rekursiver Builder-Renderer
+function renderBuilder(){
+  const tree = $("builderTree"); tree.innerHTML="";
+  const type = STATE.editing.type;
+  relabel(STATE.editing.circuit);
+  tree.appendChild(renderBuilderNode(STATE.editing.circuit, null, type));
+}
+function renderBuilderNode(block, parent, rootType){
+  if(block.kind==="r"){
+    const div = document.createElement("div"); div.className="node";
+    const lf = document.createElement("div"); lf.className="leaf-fields";
+    lf.innerHTML = `<span class="gtype">${block.label||"R"}</span> Widerstand
+       <input type="number" step="any" value="${block.R}" style="width:90px"> <span class="muted">Ω</span>`;
+    const inp = lf.querySelector("input");
+    inp.addEventListener("input", ()=>{ block.R = parseDE(inp.value)||0; updatePreview(); });
+    const del = document.createElement("button"); del.className="btn small danger"; del.textContent="✕";
+    del.title="entfernen";
+    del.addEventListener("click", ()=>{ removeBlock(STATE.editing.circuit, block); renderBuilder(); renderQPick(); updatePreview(); });
+    // Löschen nur erlauben wenn nicht einziger Block im Grundstromkreis
+    if(!(rootType==="grund")) lf.appendChild(del);
+    div.appendChild(lf);
+    return div;
+  }
+  // Gruppe
+  const div = document.createElement("div"); div.className="node group";
+  const head = document.createElement("div"); head.className="node-head";
+  const typeSel = document.createElement("select");
+  typeSel.innerHTML = `<option value="series">Reihe (in Reihe)</option><option value="parallel">Parallel</option>`;
+  typeSel.value = block.kind;
+  typeSel.addEventListener("change", ()=>{ block.kind=typeSel.value; updatePreview(); });
+  head.innerHTML = `<span class="gtype">Gruppe:</span>`;
+  head.appendChild(typeSel);
+
+  // Buttons: + Widerstand, + Gruppe (nur gemischt), löschen
+  const addR = document.createElement("button"); addR.className="btn small"; addR.textContent="+ Widerstand";
+  addR.addEventListener("click", ()=>{ block.children.push(R(100)); renderBuilder(); renderQPick(); updatePreview(); });
+  head.appendChild(addR);
+  if(rootType==="gemischt"){
+    const addG = document.createElement("button"); addG.className="btn small"; addG.textContent="+ Gruppe";
+    addG.addEventListener("click", ()=>{ block.children.push(parallel([R(100),R(100)])); renderBuilder(); renderQPick(); updatePreview(); });
+    head.appendChild(addG);
+  }
+  // Gruppe löschen (nur wenn nicht Wurzel und gemischt)
+  if(parent && rootType==="gemischt"){
+    const del = document.createElement("button"); del.className="btn small danger"; del.textContent="✕ Gruppe";
+    del.addEventListener("click", ()=>{ removeBlock(STATE.editing.circuit, block); renderBuilder(); renderQPick(); updatePreview(); });
+    head.appendChild(del);
+  }
+  div.appendChild(head);
+  const kidsWrap = document.createElement("div"); kidsWrap.className="node-children";
+  block.children.forEach(c=> kidsWrap.appendChild(renderBuilderNode(c, block, rootType)));
+  div.appendChild(kidsWrap);
+  return div;
+}
+function removeBlock(root, target){
+  function rec(node){
+    if(node.kind==="r") return;
+    const i = node.children.indexOf(target);
+    if(i>=0){ if(node.children.length>1) node.children.splice(i,1); return; }
+    node.children.forEach(rec);
+  }
+  rec(root);
+}
+
+// Fragen-Auswahl im Editor
+function renderQPick(){
+  const t = STATE.editing;
+  t.ask = t.ask||{}; t.askR = t.askR||{};
+  const glob = $("qPickGlobal"); glob.innerHTML="";
+  const globalOpts = [
+    ["Rges","Gesamtwiderstand R_ges"],["Iges","Gesamtstrom I_ges"],["Pges","Gesamtleistung P_ges"],
+    ["W","Elektrische Arbeit W"],["kosten","Energiekosten"],["eta","Wirkungsgrad η"]
+  ];
+  globalOpts.forEach(([k,lab])=>{
+    glob.appendChild(checkBox(lab, !!t.ask[k], v=>{ t.ask[k]=v; }));
+  });
+  const rp = $("qPickResistors"); rp.innerHTML="";
+  relabel(t.circuit);
+  leaves(t.circuit).forEach(l=>{
+    t.askR[l.id] = t.askR[l.id]||{};
+    ["U","I","P"].forEach(q=>{
+      rp.appendChild(checkBox(`${q}<sub>${subOf(l.label)}</sub> (${l.label})`, !!t.askR[l.id][q], v=>{ t.askR[l.id][q]=v; }));
+    });
+  });
+}
+function checkBox(labelHtml, checked, onChange){
+  const lab = document.createElement("label");
+  const cb = document.createElement("input"); cb.type="checkbox"; cb.checked=checked;
+  cb.addEventListener("change", ()=>onChange(cb.checked));
+  const sp = document.createElement("span"); sp.innerHTML=labelHtml;
+  lab.appendChild(cb); lab.appendChild(sp); return lab;
+}
+
+function readExtras(){
+  const ex = {};
+  const t = parseDE($("edTime").value); if(isFinite(t)) ex.t=t;
+  const p = parseDE($("edPrice").value); if(isFinite(p)) ex.price=p;
+  const pz = parseDE($("edPzu").value); if(isFinite(pz)) ex.Pzu=pz;
+  return ex;
+}
+function syncEditingFromForm(){
+  const t = STATE.editing;
+  t.title = $("edTitle").value.trim() || "Unbenannte Aufgabe";
+  t.description = $("edDesc").value.trim();
+  t.type = $("edType").value;
+  t.U = parseDE($("edU").value)||0;
+  t.extras = readExtras();
+}
+function updatePreview(){
+  syncEditingFromForm();
+  const svg = $("previewSvg");
+  try{
+    drawCircuit(svg, STATE.editing, {showValues:true});
+    const r = solve(STATE.editing);
+    const tb = $("prevResults"); tb.innerHTML="";
+    addRow(tb,"R_ges", fmtStr(r.Rges,"Ω"));
+    addRow(tb,"I_ges", fmtStr(r.Iges,"A"));
+    addRow(tb,"P_ges", fmtStr(r.Pges,"W"));
+    if(r.WkWh!=null) addRow(tb,"W", deNum(r.WkWh)+" kWh");
+    if(r.kosten!=null) addRow(tb,"Kosten", deNum(r.kosten,4)+" €");
+    if(r.eta!=null) addRow(tb,"η", deNum(r.eta*100,3)+" %");
+  }catch(e){
+    console.error(e);
+  }
+}
+
+/* ============================================================================
+   13) IMPORT / EXPORT
+   ============================================================================ */
+function download(filename, text){
+  const blob = new Blob([text], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 100);
+}
+function exportAll(){ download("elektro-aufgaben.json", JSON.stringify(STATE.tasks, null, 2)); }
+function exportOne(){
+  if(!STATE.editing) return;
+  syncEditingFromForm();
+  download((STATE.editing.title||"aufgabe").replace(/[^\w-]+/g,"_")+".json",
+           JSON.stringify(STATE.editing, null, 2));
+}
+function importJSON(text){
+  let data;
+  try{ data = JSON.parse(text); }catch(e){ toast("Ungültige JSON-Datei"); return; }
+  const arr = Array.isArray(data) ? data : [data];
+  let added=0;
+  arr.forEach(t=>{
+    if(t && t.circuit){
+      if(!t.id) t.id = newId("task");
+      // doppelte IDs vermeiden
+      if(STATE.tasks.some(x=>x.id===t.id)) t.id = newId("task");
+      reIdCircuit(t.circuit);
+      STATE.tasks.push(t); added++;
+    }
+  });
+  if(added){ saveTasks(); refreshTaskSelect(); toast(added+" Aufgabe(n) importiert"); }
+  else toast("Keine gültigen Aufgaben gefunden");
+}
+// Widerstands-IDs neu vergeben (verhindert Kollisionen) und askR umhängen
+function reIdCircuit(circuit){
+  // askR mapping bleibt am Editor-/Solve-Zeitpunkt über Label – hier nur sicherstellen, dass ids existieren
+  function rec(b){ if(b.kind==="r"){ if(!b.id) b.id=newId("r"); } else b.children.forEach(rec); }
+  rec(circuit);
+}
+
+/* ============================================================================
+   14) UI-VERDRAHTUNG / EVENTS
+   ============================================================================ */
+function refreshTaskSelect(){
+  const sel = $("taskSelect"); sel.innerHTML="";
+  STATE.tasks.forEach(t=>{
+    const o = document.createElement("option"); o.value=t.id; o.textContent=t.title; sel.appendChild(o);
+  });
+  if(STATE.currentId && STATE.tasks.some(t=>t.id===STATE.currentId)) sel.value=STATE.currentId;
+  else if(STATE.tasks[0]){ STATE.currentId=STATE.tasks[0].id; sel.value=STATE.currentId; }
+}
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"), 2200);
+}
+let viewMode = "student";
+function switchView(mode){
+  viewMode = mode;
+  $("btnStudent").classList.toggle("active", mode==="student");
+  $("btnTeacher").classList.toggle("active", mode==="teacher");
+  $("studentView").classList.toggle("hidden", mode!=="student");
+  $("teacherView").classList.toggle("hidden", mode!=="teacher");
+  if(mode==="student"){ renderStudent(); }
+  else { openEditor(curTask()); }
+}
+
+function init(){
+  STATE.tasks = loadTasks();
+  STATE.currentId = STATE.tasks[0] && STATE.tasks[0].id;
+  refreshTaskSelect();
+  renderStudent();
+
+  // Modus-Umschalter
+  $("btnStudent").addEventListener("click", ()=>switchView("student"));
+  $("btnTeacher").addEventListener("click", ()=>switchView("teacher"));
+
+  // Aufgabenauswahl
+  $("taskSelect").addEventListener("change", e=>{
+    STATE.currentId = e.target.value;
+    if(viewMode==="student") renderStudent(); else openEditor(curTask());
+  });
+
+  // Schüler-Buttons
+  $("btnPlay").addEventListener("click", ()=>{
+    STATE.playing = !STATE.playing;
+    const svg = $("schematic");
+    svg.classList.toggle("sim-running", STATE.playing);
+    $("btnPlay").textContent = STATE.playing ? "⏸ Animation stoppen" : "▶ Stromfluss animieren";
+    $("btnPlay").classList.toggle("primary", !STATE.playing);
+  });
+  $("btnValuesToggle").addEventListener("click", ()=>{
+    STATE.showValues = !STATE.showValues;
+    $("btnValuesToggle").textContent = STATE.showValues ? "Werte ausblenden" : "Werte einblenden";
+    renderStudent();
+  });
+  $("btnCheck").addEventListener("click", checkAnswers);
+  $("btnSolution").addEventListener("click", ()=>{
+    const box=$("solutionBox"); box.innerHTML = buildSolutionHTML(curTask()); box.classList.add("show");
+    box.scrollIntoView({behavior:"smooth", block:"nearest"});
+  });
+  $("btnReset").addEventListener("click", ()=>{
+    document.querySelectorAll('#questionList input').forEach(i=>i.value="");
+    document.querySelectorAll('.q-status').forEach(s=>{s.textContent="";s.className="q-status";});
+    $("resultBanner").className="result-banner"; $("solutionBox").className="solution";
+  });
+
+  // Multimeter-Modi
+  document.querySelectorAll(".meter-modes button").forEach(b=>{
+    b.addEventListener("click", ()=>{ STATE.meterMode=b.getAttribute("data-mode"); refreshMeterButtons(); updateMeter(); });
+  });
+
+  // Editor-Events
+  ["edTitle","edDesc","edU","edTime","edPrice","edPzu"].forEach(id=>{
+    $(id).addEventListener("input", updatePreview);
+  });
+  $("edType").addEventListener("change", ()=>{
+    STATE.editing.type = $("edType").value;
+    STATE.editing.circuit = presetCircuit(STATE.editing.type);
+    STATE.editing.askR = {};
+    updateBuilderHint(); renderBuilder(); renderQPick(); updatePreview();
+  });
+  $("edSave").addEventListener("click", ()=>{
+    syncEditingFromForm();
+    const idx = STATE.tasks.findIndex(t=>t.id===STATE.editing.id);
+    if(idx>=0) STATE.tasks[idx] = cloneTask(STATE.editing);
+    else { STATE.tasks.push(cloneTask(STATE.editing)); STATE.currentId=STATE.editing.id; }
+    saveTasks(); refreshTaskSelect();
+    $("edStatus").textContent = "Gespeichert ✓  ("+new Date().toLocaleTimeString("de-DE")+")";
+    toast("Aufgabe gespeichert");
+  });
+  $("edNew").addEventListener("click", ()=>{
+    const t = { id:newId("task"), title:"Neue Aufgabe", description:"", U:12, type:"reihe",
+                circuit:presetCircuit("reihe"), extras:{}, ask:{Rges:true,Iges:true}, askR:{} };
+    STATE.tasks.push(t); STATE.currentId=t.id; saveTasks(); refreshTaskSelect(); openEditor(t);
+    toast("Neue Aufgabe angelegt");
+  });
+  $("edDelete").addEventListener("click", ()=>{
+    if(STATE.tasks.length<=1){ toast("Mindestens eine Aufgabe muss bleiben"); return; }
+    if(!confirm("Diese Aufgabe wirklich löschen?")) return;
+    STATE.tasks = STATE.tasks.filter(t=>t.id!==STATE.editing.id);
+    STATE.currentId = STATE.tasks[0].id; saveTasks(); refreshTaskSelect(); openEditor(curTask());
+    toast("Aufgabe gelöscht");
+  });
+  $("edExport").addEventListener("click", exportAll);
+  $("edExportOne").addEventListener("click", exportOne);
+  $("edImport").addEventListener("click", ()=>$("importFile").click());
+  $("importFile").addEventListener("change", e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const rd=new FileReader(); rd.onload=()=>{ importJSON(rd.result); openEditor(curTask()); }; rd.readAsText(f);
+    e.target.value="";
+  });
+}
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
