@@ -356,6 +356,8 @@
     <div class="q-pick" id="qPickGlobal"></div>
     <div style="font-weight:700; margin:10px 0 4px; font-size:13px" class="muted">Pro Bauteil:</div>
     <div class="q-pick" id="qPickResistors"></div>
+    <label class="leaf-showr" style="font-size:12.5px; margin-top:8px">
+      <input type="checkbox" id="edShowFormulas" checked> Formeln in der Schüleransicht anzeigen (bei „Gesucht …")</label>
 
     <div class="extras-box" id="solveBox">
       <div style="font-weight:700; margin-bottom:6px">🧮 Lösbarkeit der gesuchten Größen</div>
@@ -1424,12 +1426,13 @@ function renderQuestions(task){
   const measSet = (!gateOff && anyMeterMode(task)) ? taskMeterModes(task) : null;
   const measA = measSet ? analyzeSolvability(task, measSet) : calcA;
   const modes = measSet || {};
+  const showF = task.showFormulas !== false;   // Formeln in der Schüleransicht anzeigen?
   qs.forEach(q=>{
     const unit = q.dispUnit || q.fixedUnit || q.base;
     const wrap = document.createElement("div");
     wrap.innerHTML = `
       <div class="q-row">
-        <div><div class="q-label">${q.label}</div><div class="q-formula">${q.formula||""}</div></div>
+        <div><div class="q-label">${q.label}</div>${showF&&q.formula?`<div class="q-formula">${q.formula}</div>`:""}</div>
         <div class="q-input">
           <input type="text" inputmode="decimal" data-qkey="${q.key}" placeholder="?">
           <span class="unit">${unit}</span>
@@ -1883,6 +1886,7 @@ function fillEditorForm(){
   $("edGateSolutionMin").value = gs.minutes!=null?gs.minutes:10;
   const mm = taskMeterModes(t);
   $("edModeU").checked = mm.U; $("edModeI").checked = mm.I; $("edModeR").checked = mm.R;
+  $("edShowFormulas").checked = t.showFormulas !== false;
   updateGateInputs();
   updateBuilderHint();
 }
@@ -2045,6 +2049,7 @@ function syncEditingFromForm(){
   t.extras = readExtras();
   t.gates = readGates();
   t.meterModes = {U:$("edModeU").checked, I:$("edModeI").checked, R:$("edModeR").checked};
+  t.showFormulas = $("edShowFormulas").checked;
   t.type = detectType(t.circuit);   // Schaltungsart aus der Struktur ableiten
   // Dropdown + Hinweis an die erkannte Art anpassen (löst kein change-Event aus)
   if($("edType").value !== t.type){ $("edType").value = t.type; updateBuilderHint(); }
@@ -2414,7 +2419,7 @@ function init(){
   ["edGateMeasure","edGateSolution"].forEach(id=>{
     $(id).addEventListener("change", ()=>{ updateGateInputs(); updatePreview(); });
   });
-  ["edModeU","edModeI","edModeR"].forEach(id=>{ $(id).addEventListener("change", updatePreview); });
+  ["edModeU","edModeI","edModeR","edShowFormulas"].forEach(id=>{ $(id).addEventListener("change", updatePreview); });
   $("solveCheckMeasure").addEventListener("change", renderSolvability);
   $("prevSolution").addEventListener("click", ()=>{
     const box=$("prevSolutionBox");
