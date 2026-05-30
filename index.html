@@ -85,6 +85,10 @@
   .sym-rect{fill:#0c1117; stroke:var(--wire); stroke-width:2.4}
   .sym-fill{fill:#0c1117}
   .sym-line{stroke:var(--wire); stroke-width:2.4; stroke-linecap:round}
+  .sym-dot{fill:var(--wire); stroke:none}
+  .estop-head{fill:#dc2626; stroke:#fca5a5; stroke-width:1.2}
+  .op-hit{fill:transparent; cursor:pointer}
+  .op-hit:hover{fill:var(--accent); fill-opacity:.14}
   .lbl{fill:var(--text); font:600 14px "Segoe UI",sans-serif}
   .lbl-val{fill:var(--accent2); font:500 12.5px "Segoe UI",sans-serif}
   .lbl-small{fill:var(--muted); font:500 10px "Segoe UI",sans-serif}
@@ -104,14 +108,44 @@
         filter:drop-shadow(0 0 3px var(--current));}
   svg.sim-running .wire{stroke:#64748b}
   @keyframes flowdash{to{stroke-dashoffset:-160}}
+  /* aktive Verbraucher leuchten bei Stromfluss */
+  svg.sim-running .powered.live{filter:drop-shadow(0 0 6px var(--current))}
+  svg.sim-running .powered.live .lamp-bulb{fill:#fde68a}
+  svg.sim-running .powered.live .sym-line{stroke:#1f2937}
 
-  /* probes for voltmeter */
-  .probe{r:5}
-  .probe-red{fill:var(--probe-red); stroke:#fff; stroke-width:1}
-  .probe-black{fill:var(--probe-black); stroke:#fff; stroke-width:1}
-  .probe-lead{stroke-width:2; fill:none; stroke-dasharray:3 3}
+  /* ---- Messpunkte (selbst verbinden) ---- */
+  /* Knotenpunkte (Spannung/Widerstand – parallel) */
+  .mpt{fill:#0c1117; stroke:var(--accent2); stroke-width:2; display:none; pointer-events:none}
+  .mpt-hit{fill:transparent; cursor:pointer; display:none}
+  .mpt-hit:hover{fill:var(--accent2); fill-opacity:.28}
+  /* Strommessung: Leitung selbst auftrennen */
+  .cut-hit{stroke:transparent; stroke-width:13; stroke-linecap:round; cursor:pointer; display:none}
+  svg.mm-A .cut-hit{display:block}
+  svg.mm-A .cut-hit:hover{stroke:var(--warn); stroke-opacity:.22}
+  .cut-gap{fill:#0c1117; pointer-events:none}     /* Lücke an aufgetrennter Stelle */
+  .cut-edge{stroke:var(--warn); stroke-width:2; pointer-events:none} /* Schnittkanten */
+  .cut-term{fill:#0c1117; stroke:var(--warn); stroke-width:2; pointer-events:none}
+  .cut-term-hit{fill:transparent; cursor:pointer}
+  .cut-term-hit:hover{fill:var(--warn); fill-opacity:.32}
+  /* Sichtbarkeit je Messmodus */
+  svg.mm-U .mpt, svg.mm-U .mpt-hit,
+  svg.mm-R .mpt, svg.mm-R .mpt-hit{display:block}
+  /* gesetzte Messspitzen */
+  .probe-red{fill:var(--probe-red); stroke:#fff; stroke-width:1.5; pointer-events:none}
+  .probe-black{fill:var(--probe-black); stroke:#fff; stroke-width:1.5; pointer-events:none}
+  .probe-lead{stroke:var(--accent2); stroke-width:2; fill:none; stroke-dasharray:4 3; pointer-events:none}
+  .probe-letter{fill:var(--accent2); font:700 13px "Segoe UI",sans-serif; pointer-events:none}
+  .pt-active{stroke-dasharray:3 2; animation:ptpulse 1s ease-in-out infinite}
+  @keyframes ptpulse{50%{stroke-opacity:.4}}
 
   /* ---------- Multimeter ---------- */
+  .meter-wrap{position:relative}
+  .gate-overlay{position:absolute; inset:0; background:rgba(12,17,23,.86); border-radius:12px;
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:14px;
+    z-index:6; color:var(--text); font-weight:600; line-height:1.5}
+  .gate-overlay.hidden{display:none}
+  .gate-overlay .clock{color:var(--warn)}
+  button:disabled{opacity:.5; cursor:not-allowed}
   .meter{display:flex; gap:12px; align-items:stretch; margin-top:10px; flex-wrap:wrap}
   .meter-body{background:#11161d; border:1px solid var(--line); border-radius:12px; padding:10px 12px; min-width:200px}
   .meter-display{
@@ -124,6 +158,12 @@
   .meter-modes button{flex:1; padding:6px 4px; border-radius:7px; border:1px solid var(--line);
       background:#0b1118; color:var(--muted); cursor:pointer; font-weight:700}
   .meter-modes button.active{background:var(--warn); color:#241a02; border-color:var(--warn)}
+  .probe-pick{display:flex; gap:6px; margin-top:8px}
+  .probe-pick button{flex:1; padding:6px 4px; border-radius:7px; border:1px solid var(--line);
+      background:#0b1118; color:var(--text); cursor:pointer; font-weight:600; font-size:11.5px}
+  .probe-pick button[data-probe="red"].active{border-color:var(--probe-red); box-shadow:0 0 0 1px var(--probe-red) inset}
+  .probe-pick button[data-probe="black"].active{border-color:#fff; box-shadow:0 0 0 1px #fff inset}
+  .probe-pick .probe-clear{flex:0 0 auto; color:var(--muted)}
   .meter-hint{font-size:11.5px; color:var(--muted); margin-top:7px; min-height:30px}
 
   /* ---------- Task / Aufgabe ---------- */
@@ -142,6 +182,10 @@
   .q-input .unit{color:var(--muted); width:34px; font-family:monospace; font-weight:700}
   .q-status{width:24px; text-align:center; font-size:18px}
   .q-status.ok{color:var(--ok)} .q-status.bad{color:var(--bad)}
+  .q-rev{padding:4px 7px; font-size:12px}
+  .q-sol{display:none; font-size:13px; padding:4px 2px 9px; border-bottom:1px solid var(--line)}
+  .q-sol.show{display:block}
+  .q-sol b{color:var(--accent2)}
 
   .result-banner{padding:10px 12px; border-radius:8px; margin:10px 0; font-weight:600; display:none}
   .result-banner.show{display:block}
@@ -178,7 +222,9 @@
   .node-head .gtype{font-weight:700; font-size:12px; color:var(--accent2)}
   .node-children{margin-left:14px; border-left:2px dashed #334155; padding-left:10px; margin-top:6px}
   .leaf-fields{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-  .leaf-fields input{width:90px}
+  .leaf-fields input[type=number]{width:90px}
+  .leaf-showr{display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--muted); cursor:pointer}
+  .leaf-showr input{width:auto; accent-color:var(--accent)}
   .q-pick{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px; margin-top:6px}
   .q-pick label{display:flex; gap:6px; align-items:center; background:#0b1118; padding:6px 8px;
                 border:1px solid var(--line); border-radius:7px; color:var(--text); cursor:pointer}
@@ -225,6 +271,8 @@
     </div>
 
     <!-- Multimeter -->
+    <div class="meter-wrap">
+    <div class="gate-overlay hidden" id="meterLock"></div>
     <div class="meter">
       <div class="meter-body">
         <div class="meter-display" id="meterDisplay">––––<span class="mu"></span></div>
@@ -233,17 +281,23 @@
           <button data-mode="I">A ⎓</button>
           <button data-mode="R">Ω</button>
         </div>
-        <div class="meter-hint" id="meterHint">Modus wählen, dann ein Bauteil bzw. die Quelle anklicken.</div>
+        <div class="probe-pick" id="probePick">
+          <button data-probe="red" class="active">🔴 Rote Spitze</button>
+          <button data-probe="black">⚫ Schwarze Spitze</button>
+          <button class="probe-clear" id="btnProbeClear">⟲ lösen</button>
+        </div>
+        <div class="meter-hint" id="meterHint"></div>
       </div>
       <div class="meter-body" style="flex:1; min-width:170px">
         <div style="font-weight:700; margin-bottom:6px">📟 Digital-Multimeter</div>
         <div class="muted" style="font-size:12.5px">
-          <b>Spannung (V)</b> wird <u>parallel</u> zum Bauteil gemessen.<br>
-          <b>Strom (A)</b> wird <u>in Reihe</u> gemessen.<br>
-          <b>Widerstand (Ω)</b> am <u>stromlosen</u> Bauteil.
+          <b>Spannung (V)</b> wird <u>parallel</u> zum Bauteil gemessen → blaue Anschlusspunkte.<br>
+          <b>Strom (A)</b> wird <u>in Reihe</u> gemessen → Leitung anklicken = <u>auftrennen</u>, dann beide Spitzen an die zwei Klemmen. Falsch aufgetrennt → Kreis bleibt offen, kein Strom!<br>
+          <b>Widerstand (Ω)</b> am <u>stromlosen</u> Bauteil messen.
         </div>
-        <div id="measureLabel" class="muted" style="font-size:12.5px; margin-top:6px"></div>
+        <div id="probeStatus" style="font-size:12.5px; margin-top:8px"></div>
       </div>
+    </div>
     </div>
   </section>
 
@@ -300,8 +354,15 @@
     <hr class="hr">
     <div style="font-weight:700; margin-bottom:4px">Gesuchte Größen (was die Schüler berechnen sollen)</div>
     <div class="q-pick" id="qPickGlobal"></div>
-    <div style="font-weight:700; margin:10px 0 4px; font-size:13px" class="muted">Pro Widerstand:</div>
+    <div style="font-weight:700; margin:10px 0 4px; font-size:13px" class="muted">Pro Bauteil:</div>
     <div class="q-pick" id="qPickResistors"></div>
+
+    <div class="extras-box" id="solveBox">
+      <div style="font-weight:700; margin-bottom:6px">🧮 Lösbarkeit der gesuchten Größen</div>
+      <label class="leaf-showr" style="font-size:12.5px">
+        <input type="checkbox" id="solveCheckMeasure" checked> verfügbare Messung einbeziehen</label>
+      <div id="solveReport" style="margin-top:6px"></div>
+    </div>
 
     <div class="extras-box" id="extrasBox">
       <div style="font-weight:700; margin-bottom:6px">Zusatzangaben (für Arbeit/Energie &amp; Wirkungsgrad)</div>
@@ -313,18 +374,71 @@
       <div class="muted" style="font-size:11.5px; margin-top:5px">P<sub>zu</sub> nur nötig, wenn „Wirkungsgrad" gesucht ist. P<sub>ab</sub> = aufgenommene Gesamtleistung der Schaltung.</div>
     </div>
 
+    <div class="extras-box" id="gatesBox">
+      <div style="font-weight:700; margin-bottom:6px">🔒 Freigaben &amp; Bedingungen</div>
+      <div class="row-inline">
+        <label style="width:120px">🔧 Messgerät</label>
+        <select id="edGateMeasure">
+          <option value="always">immer erlaubt</option>
+          <option value="off">deaktiviert</option>
+          <option value="timed">erst nach Zeit</option>
+        </select>
+        <input type="number" id="edGateMeasureMin" step="any" min="0" value="5" style="width:80px"> <span class="muted">min</span>
+      </div>
+      <div class="row-inline" style="margin-top:6px">
+        <label style="width:120px">📐 Messgrößen</label>
+        <label class="leaf-showr"><input type="checkbox" id="edModeU" checked> Spannung (V)</label>
+        <label class="leaf-showr"><input type="checkbox" id="edModeI" checked> Strom (A)</label>
+        <label class="leaf-showr"><input type="checkbox" id="edModeR" checked> Widerstand (Ω)</label>
+      </div>
+      <div class="row-inline" style="margin-top:6px">
+        <label style="width:120px">💡 Musterlösung</label>
+        <select id="edGateSolution">
+          <option value="always">immer erlaubt</option>
+          <option value="off">deaktiviert</option>
+          <option value="timed">erst nach Zeit</option>
+        </select>
+        <input type="number" id="edGateSolutionMin" step="any" min="0" value="10" style="width:80px"> <span class="muted">min</span>
+      </div>
+      <div class="muted" style="font-size:11.5px; margin-top:5px">„erst nach Zeit": wird nach der eingestellten Bearbeitungszeit automatisch freigeschaltet. Die Zeit startet, sobald der Schüler die Aufgabe öffnet (ein Neuladen startet sie neu).</div>
+    </div>
+
     <hr class="hr">
     <div class="row-inline">
       <button class="btn primary" id="edSave">💾 Aufgabe speichern</button>
       <button class="btn" id="edNew">＋ Neue Aufgabe</button>
       <button class="btn danger small" id="edDelete">🗑 Aufgabe löschen</button>
       <div class="spacer" style="flex:1"></div>
-      <button class="btn small" id="edExport">⬇ Export (JSON)</button>
-      <button class="btn small" id="edExportOne">⬇ Diese Aufgabe</button>
-      <button class="btn small" id="edImport">⬆ Import (JSON)</button>
-      <input type="file" id="importFile" accept="application/json,.json" class="hidden">
+      <button class="btn small" id="edExportOne" title="Aktuelle Aufgabe als Datei">⬇ Aufgabe (.bkeptask)</button>
+      <button class="btn small" id="edExport" title="Alle Aufgaben (gesamte Umgebung)">⬇ Umgebung (.bkepenvironment)</button>
+      <button class="btn small" id="edImport">⬆ Laden (.bkeptask / .bkepenvironment)</button>
+      <input type="file" id="importFile" accept=".bkeptask,.bkepenvironment,.json,application/json" class="hidden">
     </div>
     <div class="muted" style="font-size:12px; margin-top:8px" id="edStatus"></div>
+
+    <hr class="hr">
+    <div style="font-weight:700; margin-bottom:4px">🎓 Für Schüler bereitstellen (ohne Lehrkraftmodus)</div>
+    <div class="muted" style="font-size:12.5px; margin-bottom:6px">Wähle die Aufgaben aus, die die Schüler erhalten sollen:</div>
+    <div class="q-pick" id="shareTaskPick"></div>
+    <div class="row-inline" style="margin-top:8px">
+      <button class="btn primary small" id="shareLink">🔗 Link kopieren</button>
+      <button class="btn small" id="shareQR">📱 QR-Code</button>
+      <button class="btn small" id="shareOpen">👁 Schüleransicht öffnen</button>
+      <button class="btn small" id="shareMail">✉ Per E-Mail</button>
+      <button class="btn small" id="shareFile">💾 Schüler-HTML</button>
+    </div>
+    <textarea id="shareOut" rows="2" placeholder="Hier erscheint der Schüler-Link …" style="margin-top:8px; display:none"></textarea>
+    <div id="shareQRbox" style="display:none; margin-top:10px; text-align:center">
+      <div id="qrTarget" style="display:inline-block; background:#fff; padding:10px; border-radius:8px"></div>
+      <div id="qrNote" class="muted" style="font-size:11.5px; margin-top:6px"></div>
+      <div class="row-inline" style="justify-content:center; margin-top:6px">
+        <button class="btn small" id="qrCopy">📋 Als Bild kopieren</button>
+        <button class="btn small" id="qrPng">QR als PNG</button>
+        <button class="btn small" id="qrSvg">QR als SVG</button>
+        <button class="btn small" id="qrPrint">QR drucken</button>
+      </div>
+    </div>
+    <div class="muted" style="font-size:11.5px; margin-top:6px">Beim Öffnen über Link / QR / Datei ist der Lehrkraftmodus ausgeblendet; die Schüler sehen nur die ausgewählten Aufgaben. Link/QR am besten auf der veröffentlichten Seite (GitHub Pages) erzeugen.</div>
   </section>
 
   <section class="card">
@@ -338,11 +452,26 @@
       Die Vorschau aktualisiert sich automatisch. Die berechneten Ergebnisse:
     </div>
     <table class="given-table" style="margin-top:6px"><tbody id="prevResults"></tbody></table>
+    <div class="row-inline" style="margin-top:10px">
+      <button class="btn small" id="prevSolution">💡 Musterlösung &amp; Rechenweg</button>
+    </div>
+    <div class="solution" id="prevSolutionBox"></div>
   </section>
 </main>
 
 <div class="toast" id="toast"></div>
 
+<script>/*! qrcode-generator 1.4.4 (MIT, Kazuhiko Arase) */
+(function(){var module={exports:{}},exports=module.exports;
+/**
+ * Minified by jsDelivr using Terser v5.37.0.
+ * Original file: /npm/qrcode-generator@1.4.4/qrcode.js
+ *
+ * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
+ */
+var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,(function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1}))},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}((function(){return qrcode}));
+if(typeof window!=="undefined")window.qrcode=module.exports;})();
+</script>
 <script>
 "use strict";
 /* ============================================================================
@@ -396,9 +525,45 @@ function parseDE(str){
 let _idc = 1;
 const newId = (p)=> (p||"n")+"_"+(_idc++)+"_"+Math.floor(Math.random()*1e4);
 
-function R(val){ return {kind:"r", id:newId("r"), R: val}; }
+function R(val, comp){
+  const c = COMPONENTS[comp] || COMPONENTS.resistor;
+  return {kind:"r", id:newId("r"), R: c.control ? 0 : val, comp: comp||"resistor"};
+}
 function series(children){ return {kind:"series", children}; }
 function parallel(children){ return {kind:"parallel", children}; }
+
+// Bauteile. Verbraucher: elektrisch zählt der Widerstand R.
+// Schaltglieder (control): ideale Kontakte (0 Ω); geschlossen = leitend, offen = Unterbrechung.
+// letter = Betriebsmittelkennzeichen; hw = halbe Symbolbreite; contact = 'no' (Schließer)/'nc' (Öffner).
+const COMPONENTS = {
+  resistor:  {name:"Widerstand",          letter:"R", hw:27, powered:false},
+  lamp:      {name:"Lampe",               letter:"E", hw:16, powered:true},
+  motor:     {name:"Motor",               letter:"M", hw:16, powered:true},
+  heater:    {name:"Heizelement",         letter:"E", hw:22, powered:true},
+  buzzer:    {name:"Signalgeber",         letter:"H", hw:16, powered:true},
+  button:    {name:"Taster (Schließer)",  letter:"S", hw:16, control:true, contact:"no", momentary:true},
+  button_nc: {name:"Taster (Öffner)",     letter:"S", hw:16, control:true, contact:"nc", momentary:true},
+  switch:    {name:"Schalter (Schließer)",letter:"S", hw:16, control:true, contact:"no"},
+  switch_nc: {name:"Schalter (Öffner)",   letter:"S", hw:16, control:true, contact:"nc"},
+  estop:     {name:"Not-Aus",             letter:"S", hw:18, control:true, contact:"nc", estop:true},
+};
+function compOf(block){ return COMPONENTS[block && block.comp] || COMPONENTS.resistor; }
+// Leitet ein Kontakt im aktuellen Zustand? Schließer: leitet wenn betätigt; Öffner: leitet wenn unbetätigt.
+function isClosed(block){
+  const c = compOf(block);
+  if(!c.control) return true;                 // Verbraucher leiten immer
+  return c.contact==="nc" ? !block.actuated : !!block.actuated;
+}
+// nur Verbraucher (für Berechnung/Fragen/Tabellen relevant)
+function consumers(circuit){ return leaves(circuit).filter(l=> !compOf(l).control); }
+// Schaltungsart aus der Struktur ableiten
+function detectType(circuit){
+  if(circuit.kind==="r") return "grund";
+  const allLeaves = circuit.children.every(c=>c.kind==="r");
+  if(circuit.kind==="series")   return allLeaves ? "reihe" : "gemischt";
+  if(circuit.kind==="parallel") return allLeaves ? "parallel" : "gemischt";
+  return "gemischt";
+}
 
 // Blätter eines Baumes in Lesereihenfolge sammeln
 function leaves(block, out){
@@ -407,10 +572,15 @@ function leaves(block, out){
   else block.children.forEach(c=>leaves(c,out));
   return out;
 }
-// Widerstände nach Reihenfolge mit R1..Rn beschriften
+// Bauteile in Lesereihenfolge beschriften – je Kennbuchstabe eigene Zählung (R1, E1, M1, …)
 function relabel(circuit){
   const ls = leaves(circuit);
-  ls.forEach((l,i)=> l.label = "R"+(i+1));
+  const cnt = {};
+  ls.forEach(l=>{
+    const c = compOf(l);
+    cnt[c.letter] = (cnt[c.letter]||0)+1;
+    l.label = c.letter + cnt[c.letter];
+  });
   return ls;
 }
 
@@ -433,6 +603,19 @@ function propagate(block, I){
     block.children.forEach(c=> propagate(c, block.U / c.Rt)); // gleiche Spannung
   }
 }
+// Verteilt die elektrischen Potenziale: vL = Potenzial am linken Anschluss,
+// vR = am rechten. Der Strom fließt von + (hoch) nach – (0) und verliert je
+// Bauteil U = I·R an Potenzial.
+function propagatePotential(block, vL){
+  block.vL = vL; block.vR = vL - block.U;
+  if(block.kind==="r") return;
+  if(block.kind==="series"){
+    let run = vL;
+    block.children.forEach(c=>{ propagatePotential(c, run); run = c.vR; });
+  }else{
+    block.children.forEach(c=> propagatePotential(c, vL)); // alle Zweige: gleiche Grenzknoten
+  }
+}
 // Komplettlösung; gibt Totalwerte zurück und annotiert den Baum
 function solve(task){
   const circuit = task.circuit;
@@ -441,6 +624,7 @@ function solve(task){
   const Iges = task.U / Rges;
   // Quellenspannung liegt am Wurzelblock an:
   propagate(circuit, Iges);
+  propagatePotential(circuit, task.U);   // Potenziale für Messpunkte (+ = U, – = 0)
   const Pges = task.U * Iges;
   const res = {Rges, Iges, Pges, U: task.U};
   const ex = task.extras || {};
@@ -468,6 +652,52 @@ function el(tag, attrs, parent){
   return e;
 }
 
+// Schaltzeichen der Bauteile (in VALIS-Optik) in die Gruppe grp zeichnen
+function drawSymbol(grp, block, cx, cy){
+  const comp = block.comp || "resistor";
+  const C = compOf(block);
+  if(C.control){ drawSwitch(grp, block, cx, cy); return; }
+  switch(comp){
+    case "lamp": // Leuchte: Kreis mit Kreuz
+      el("circle",{cx, cy, r:15, class:"sym-rect lamp-bulb"}, grp);
+      el("line",{x1:cx-10.6,y1:cy-10.6,x2:cx+10.6,y2:cy+10.6, class:"sym-line"}, grp);
+      el("line",{x1:cx-10.6,y1:cy+10.6,x2:cx+10.6,y2:cy-10.6, class:"sym-line"}, grp);
+      break;
+    case "motor": { // Motor: Kreis mit M
+      el("circle",{cx, cy, r:15, class:"sym-rect"}, grp);
+      const t=el("text",{x:cx, y:cy+5, "text-anchor":"middle", class:"lbl"}, grp); t.textContent="M";
+      break; }
+    case "heater": // Heizelement: Rechteck mit Querstrichen
+      el("rect",{x:cx-22, y:cy-11, width:44, height:22, class:"sym-rect"}, grp);
+      [-10,0,10].forEach(dx=> el("line",{x1:cx+dx, y1:cy-7, x2:cx+dx, y2:cy+7, class:"sym-line"}, grp));
+      break;
+    case "buzzer": { // Signalgeber: Halbkreis (Hupe)
+      el("path",{d:`M ${cx-12} ${cy-12} A 12 12 0 0 1 ${cx-12} ${cy+12} L ${cx+13} ${cy+13} L ${cx+13} ${cy-13} Z`,
+                 class:"sym-rect"}, grp);
+      break; }
+    default: // Widerstand: Rechteck
+      el("rect",{x:cx-27, y:cy-9, width:54, height:18, rx:2, class:"sym-rect"}, grp);
+  }
+}
+// Schalter/Taster/Not-Aus: Kontakt, dessen Stellung den Leitzustand zeigt
+function drawSwitch(grp, block, cx, cy){
+  const C = compOf(block);
+  const closed = isClosed(block);
+  const lx = cx-13, rx = cx+13;
+  el("circle",{cx:lx, cy, r:2.8, class:"sym-dot"}, grp);   // feste Kontakte
+  el("circle",{cx:rx, cy, r:2.8, class:"sym-dot"}, grp);
+  // bewegliches Schaltglied: geschlossen = gerade, offen = abgehoben
+  if(closed) el("line",{x1:lx, y1:cy, x2:rx, y2:cy, class:"sym-line sw-blade"}, grp);
+  else       el("line",{x1:lx, y1:cy, x2:rx-1, y2:cy-13, class:"sym-line sw-blade"}, grp);
+  // Öffner-Kennzeichnung: kurzer Querstrich am rechten Kontakt
+  if(C.contact==="nc") el("line",{x1:rx, y1:cy-7, x2:rx+7, y2:cy-7, class:"sym-line"}, grp);
+  // Not-Aus: roter Pilzdrucktaster über dem Kontakt
+  if(C.estop){
+    el("line",{x1:cx, y1:cy-9, x2:cx, y2:cy-2, class:"sym-line", "stroke-dasharray":"2 2"}, grp);
+    el("rect",{x:cx-9, y:cy-20, width:18, height:8, rx:4, class:"estop-head"}, grp);
+  }
+}
+
 // Layout-Knoten berechnen (Größe + relative Positionen der Kinder)
 function layout(block){
   if(block.kind==="r"){
@@ -493,22 +723,34 @@ function renderNode(node, ox, oy, g, store, showValues){
   const b = node.block;
   if(node.type==="r"){
     const cx = ox + node.w/2, cy = oy + node.cy;
-    const bodyW = 54, bodyH = 18;
+    const C = compOf(b);
+    const HW = C.hw;
     const left = ox, right = ox + node.w;
-    // Anschlussdrähte
-    addWire(g, store, left, cy, cx-bodyW/2, cy, b.I);
-    addWire(g, store, cx+bodyW/2, cy, right, cy, b.I);
-    // Widerstandskörper (klickbar)
-    const grp = el("g", {class:"res-hit", "data-rid":b.id}, g);
-    el("rect", {x:cx-bodyW/2, y:cy-bodyH/2, width:bodyW, height:bodyH, rx:2, class:"sym-rect"}, grp);
+    const bl = cx-HW, br = cx+HW;
+    // Anschlussdrähte (auftrennbar)
+    addWire(g, store, left, cy, bl, cy, b.I);
+    addWire(g, store, br, cy, right, cy, b.I);
+    // Netzwerk-Kante: Verbraucher = Widerstand; Schaltglied = idealer Kontakt
+    const rEdge = C.control ? addSwitchEdge(store, bl, cy, br, cy, b)
+                            : addRedge(store, bl, cy, br, cy, b.R, b.I, b.id);
+    // Bauteilsymbol (klickbar; .powered = leuchtet bei Stromfluss)
+    const grp = el("g", {class:"res-hit"+(C.powered?" powered":"")+(C.control?" switch-op":""), "data-rid":b.id}, g);
+    drawSymbol(grp, b, cx, cy);
     // Beschriftung
-    const t1 = el("text", {x:cx, y:cy-bodyH/2-7, "text-anchor":"middle", class:"lbl"}, grp);
+    const t1 = el("text", {x:cx, y:cy-22, "text-anchor":"middle", class:"lbl"}, grp);
     t1.textContent = b.label;
-    if(showValues){
-      const t2 = el("text", {x:cx, y:cy+bodyH/2+15, "text-anchor":"middle", class:"lbl-val"}, grp);
+    if(showValues && !C.control && b.showR!==false){
+      const t2 = el("text", {x:cx, y:cy+26, "text-anchor":"middle", class:"lbl-val"}, grp);
       t2.textContent = fmtStr(b.R, "Ω");
     }
-    store.resistors.push({id:b.id, cx, cy, left, right, bodyW, bodyH, node});
+    store.resistors.push({id:b.id, cx, cy, left, right, grp, rEdge, comp:b.comp||"resistor", isControl:!!C.control, node});
+    if(store.interactive){
+      // Knotenpunkte für Spannungs-/Widerstandsmessung (parallel anlegen)
+      addNodePoint(store, left,  cy, {pot:b.vL, rid:b.id, side:"l", r:b.R, nodeKey:nodeAt(store,left,cy), label:b.label+" (links)"});
+      addNodePoint(store, right, cy, {pot:b.vR, rid:b.id, side:"r", r:b.R, nodeKey:nodeAt(store,right,cy), label:b.label+" (rechts)"});
+      // Schaltglieder per Klick betätigen
+      if(C.control) store.switchOps.push({rid:b.id, x:cx, y:cy, hw:HW});
+    }
     return {left:{x:left,y:cy}, right:{x:right,y:cy}};
   }
   if(node.type==="series"){
@@ -523,37 +765,80 @@ function renderNode(node, ox, oy, g, store, showValues){
   }
   // parallel
   const leftX = ox, rightX = ox + node.w;
-  const spineY = [];
+  const cy = oy + node.cy;
+  const leftYs = [cy], rightYs = [cy];
   node.kids.forEach(k=>{
     const t = renderNode(k, ox+k.ox, oy+k.oy, g, store, showValues);
     // Anschluss-Drähte an die Busschienen (Strom durch Zweig = Kindstrom)
     addWire(g, store, leftX, t.left.y, t.left.x, t.left.y, k.block.I);
     addWire(g, store, t.right.x, t.right.y, rightX, t.right.y, k.block.I);
-    spineY.push(t.left.y);
+    leftYs.push(t.left.y); rightYs.push(t.right.y);
   });
-  const cy = oy + node.cy;
-  const yMin = Math.min.apply(null, spineY.concat([cy]));
-  const yMax = Math.max.apply(null, spineY.concat([cy]));
-  // Busschienen (tragen Gesamtstrom des Blocks)
-  addWire(g, store, leftX, yMin, leftX, yMax, b.I);
-  addWire(g, store, rightX, yMin, rightX, yMax, b.I);
+  // Busschienen als EINZELSEGMENTE durch jeden Knoten (sonst keine elektr. Verbindung!)
+  busSegments(g, store, leftX, leftYs, b.I);
+  busSegments(g, store, rightX, rightYs, b.I);
   return {left:{x:leftX, y:cy}, right:{x:rightX, y:cy}};
 }
+// Vertikale Busschiene aus Segmenten zwischen aufeinanderfolgenden Y-Werten
+function busSegments(g, store, x, ys, current){
+  const sorted = [...new Set(ys.map(v=>Math.round(v)))].sort((a,b)=>a-b);
+  for(let i=0;i<sorted.length-1;i++) addWire(g, store, x, sorted[i], x, sorted[i+1], current);
+}
 
-// Draht + animierte Flow-Linie hinzufügen
+// Graph-Knoten an Koordinate (dedupliziert über gerundete Position)
+function nodeAt(store, x, y){
+  const key = Math.round(x)+","+Math.round(y);
+  if(!store.graph.nodes.has(key)) store.graph.nodes.set(key, {key, x:Math.round(x), y:Math.round(y)});
+  return key;
+}
+// Draht (auftrennbar) + animierte Flow-Linie + Netzwerk-Kante
 function addWire(g, store, x1,y1,x2,y2, current){
   el("line", {x1,y1,x2,y2, class:"wire"}, g);
   const f = el("line", {x1,y1,x2,y2, class:"flow"});
   store.flowLayer.appendChild(f);
-  store.flows.push({el:f, current});
+  const a = nodeAt(store, x1,y1), b = nodeAt(store, x2,y2);
+  const edge = {id:"w"+(store.edgeSeq++), type:"W", a, b, x1,y1,x2,y2,
+                current0:current||0, curNow:current||0, flowEl:f};
+  store.graph.edges.push(edge);
+  store.flows.push({el:f, edge});
+  return edge;
+}
+// Verbraucher als Netzwerk-Kante (nicht auftrennbar)
+function addRedge(store, x1,y1,x2,y2, R, current, rid){
+  const a = nodeAt(store, x1,y1), b = nodeAt(store, x2,y2);
+  const edge = {id:"r_"+rid, type:"R", a, b, value:R, current0:current||0, curNow:current||0};
+  store.graph.edges.push(edge);
+  return edge;
+}
+// Schaltglied als idealer Kontakt (0 Ω). Offen = aus dem Netz entfernt (wie ein Schnitt).
+function addSwitchEdge(store, x1,y1,x2,y2, block){
+  const a = nodeAt(store, x1,y1), b = nodeAt(store, x2,y2);
+  const f = el("line", {x1,y1,x2,y2, class:"flow"}); store.flowLayer.appendChild(f);
+  const edge = {id:"sw_"+block.id, type:"SW", a, b, block, current0:0, curNow:0, flowEl:f};
+  store.graph.edges.push(edge);
+  store.flows.push({el:f, edge});
+  store.switchEdges.push(edge);
+  return edge;
+}
+// Knotenpunkt (für Spannungs-/Widerstandsmessung, parallel)
+function addNodePoint(store, x, y, meta){
+  const idx = store.points.length;
+  store.points.push(Object.assign({x, y, kind:"node", nodeKey:nodeAt(store,x,y)}, meta));
+  el("circle", {cx:x, cy:y, r:4.5, class:"mpt"}, store.pointLayer);
+  const hit = el("circle", {cx:x, cy:y, r:11, class:"mpt-hit", "data-pid":idx}, store.pointLayer);
+  const tt = el("title", {}, hit); tt.textContent = "Messpunkt: "+(meta.label||"");
 }
 
 // Spannungsquelle (Batterie) horizontal auf der unteren Schiene
 function drawSource(g, store, x1, x2, y, U, showValues){
   const mid = (x1+x2)/2;
-  // Drähte zur Quelle
+  // Drähte zur Quelle (auftrennbar)
   addWire(g, store, x1, y, mid-26, y, store.Iges);
   addWire(g, store, mid+26, y, x2, y, store.Iges);
+  // Quelle als Netzwerk-Kante: + (links, hohes Potenzial U) → – (rechts, 0 V)
+  const aPlus = nodeAt(store, mid-26, y), bMinus = nodeAt(store, mid+26, y);
+  store.graph.edges.push({id:"src", type:"V", a:aPlus, b:bMinus, value:U});
+  store.sourceNeg = bMinus;
   const src = el("g", {class:"src-hit", "data-src":"1"}, g);
   // Batterie-Symbol: lange Linie (+) , kurze dicke Linie (−)
   el("line", {x1:mid-12, y1:y-16, x2:mid-12, y2:y+16, class:"sym-line"}, src); // lang +
@@ -563,6 +848,11 @@ function drawSource(g, store, x1, x2, y, U, showValues){
   const m = el("text",{x:mid+16, y:y-8, class:"lbl-small"},src); m.textContent="–";
   const lab = el("text",{x:mid, y:y+34, "text-anchor":"middle", class:"lbl"},src);
   lab.textContent = "U" + (showValues? " = "+fmtStr(U,"V") : "");
+  if(store.interactive){
+    // Anschlusspunkte der Quelle (+ liegt auf U, – auf 0 V)
+    addNodePoint(store, mid-26, y, {pot:U, src:"+", label:"Quelle + (U)"});
+    addNodePoint(store, mid+26, y, {pot:0, src:"-", label:"Quelle – (0 V)"});
+  }
 }
 
 // Komplette Schaltung in ein SVG zeichnen
@@ -575,10 +865,18 @@ function drawCircuit(svg, task, opts){
 
   const root = layout(task.circuit);
   const X0 = 60, Y0 = 40;
-  const store = {resistors:[], flows:[], flowLayer:el("g",{},null), Iges:task.circuit.I};
+  const store = {resistors:[], flows:[], points:[], switchEdges:[], switchOps:[], edgeSeq:0,
+                 graph:{nodes:new Map(), edges:[]},
+                 flowLayer:el("g",{},null), pointLayer:el("g",{},null),
+                 cutLayer:el("g",{},null), opLayer:el("g",{},null), probeLayer:el("g",{},null),
+                 Iges:task.circuit.I, interactive:!!opts.interactive};
 
   const g = el("g", {}, svg);             // Drähte+Symbole
-  svg.appendChild(store.flowLayer);       // Flow-Layer oben drauf
+  svg.appendChild(store.flowLayer);       // Flow-Layer
+  svg.appendChild(store.pointLayer);      // Messpunkte (U/Ω)
+  svg.appendChild(store.cutLayer);        // Auftrennen (A): Hit-Linien + Lücken + Klemmen
+  svg.appendChild(store.opLayer);         // Schaltglieder betätigen
+  svg.appendChild(store.probeLayer);      // gesetzte Messspitzen (oben)
 
   const term = renderNode(root, X0, Y0, g, store, showValues);
   // Außenschleife
@@ -588,56 +886,98 @@ function drawCircuit(svg, task, opts){
   drawSource(g, store, term.left.x, term.right.x, railY, task.U, showValues);
 
   // viewBox an Inhalt anpassen
-  const pad = 30;
-  const bb = svg.getBBox ? null : null;
-  // getBBox erst nach Einfügen ins DOM zuverlässig -> wir berechnen grob:
-  const minX = 0, minY = 0;
   const W = term.right.x + 80, H = railY + 60;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
 
-  // Klick-Handler für Messung
   store.svg = svg; store.task = task;
+  // Live-Ströme (mit Schalterstellungen) für die Animation berechnen
+  recomputeLive(store, new Set());
+  if(store.interactive){ buildCutHits(store); buildSwitchOps(store); }
   return store;
+}
+// IDs der offenen (nicht leitenden) Schaltglieder
+function openSwitchIds(store){
+  const s = new Set();
+  store.switchEdges.forEach(e=>{ if(!isClosed(e.block)) s.add(e.id); });
+  return s;
+}
+// Netzwerk lösen (Schalterstellungen + zusätzliche Schnitte) und Kantenströme übernehmen
+function recomputeLive(store, extraCuts){
+  const cuts = new Set(extraCuts||[]);
+  openSwitchIds(store).forEach(id=>cuts.add(id));
+  const res = solveNetwork(store.graph, cuts, null);
+  store.graph.edges.forEach(e=> e.curNow = (res && res.edgeCurrent.has(e.id)) ? res.edgeCurrent.get(e.id) : 0);
+  return res;
+}
+// Klickflächen über Schaltglieder (zum Betätigen)
+function buildSwitchOps(store){
+  store.switchOps.forEach(s=>{
+    const hit = el("rect", {x:s.x-s.hw-4, y:s.y-26, width:2*(s.hw+4), height:52,
+                            class:"op-hit", "data-op":s.rid}, store.opLayer);
+    const tt = el("title", {}, hit); tt.textContent = "Schaltglied betätigen";
+  });
+}
+// Über jede auftrennbare Leitung eine unsichtbare, klickbare „Schere"-Linie legen
+function buildCutHits(store){
+  store.cutHit = el("g", {}, store.cutLayer);   // statische Hit-Linien
+  store.cutVis = el("g", {}, store.cutLayer);   // dynamische Lücken/Klemmen
+  store.graph.edges.filter(e=>e.type==="W").forEach(e=>{
+    const hit = el("line", {x1:e.x1,y1:e.y1,x2:e.x2,y2:e.y2, class:"cut-hit", "data-edge":e.id}, store.cutHit);
+    const tt = el("title", {}, hit); tt.textContent = "Leitung auftrennen";
+  });
 }
 
 /* ============================================================================
    4) STROMFLUSS-ANIMATION
    ============================================================================ */
 function applyFlowSpeed(store){
-  // Geschwindigkeit ~ Stromstärke (mehr Strom = schneller)
-  const Imax = store.flows.reduce((m,f)=> Math.max(m, Math.abs(f.current||0)), 1e-9);
+  // Geschwindigkeit ~ Stromstärke (mehr Strom = schneller); stromlose Leitungen aus
+  const Imax = store.flows.reduce((m,f)=> Math.max(m, Math.abs(f.edge.curNow||0)), 1e-9);
   store.flows.forEach(f=>{
-    const ratio = Math.abs(f.current||0)/Imax;        // 0..1
-    const dur = 2.6 - 2.0*ratio;                       // 0.6s (schnell) .. 2.6s (langsam)
-    f.el.style.animationDuration = dur.toFixed(2)+"s";
+    const I = Math.abs(f.edge.curNow||0);
+    if(I < 1e-9){ f.el.style.display = "none"; return; }   // offene/strom­lose Leitung
+    f.el.style.display = "";
+    const ratio = I/Imax;                               // 0..1
+    f.el.style.animationDuration = (2.6 - 2.0*ratio).toFixed(2)+"s";
+  });
+  // Verbraucher (Lampe/Motor/…) leuchten/aktiv, wenn Strom fließt
+  (store.resistors||[]).forEach(r=>{
+    if(!r.grp) return;
+    const I = r.rEdge ? Math.abs(r.rEdge.curNow||0) : 0;
+    r.grp.classList.toggle("live", I > 1e-9);
   });
 }
 
 /* ============================================================================
    5) MUSTERLÖSUNG / RECHENWEG (HTML mit Formeln)
    ============================================================================ */
+// Kinder ohne ideale Schaltglieder (für die Anzeige in Formeln)
+function calcKids(block){
+  const k = block.children.filter(c=> !(c.kind==="r" && compOf(c).control));
+  return k.length ? k : block.children;
+}
 // Lesbares Label für einen (Teil-)Block: R1, (R2∥R3), (R1+R2) ...
 function blockLabel(block){
   if(block.kind==="r") return block.label;
   const sep = block.kind==="series" ? " + " : " ∥ ";
-  return "(" + block.children.map(blockLabel).join(sep) + ")";
+  return "(" + calcKids(block).map(blockLabel).join(sep) + ")";
 }
 // Sammelt Rechenschritte für Rges (innen nach außen)
 function rgesSteps(block, steps){
   steps = steps || [];
   if(block.kind==="r") return steps;
   block.children.forEach(c=> rgesSteps(c, steps));
+  const kids = calcKids(block);
   if(block.kind==="series"){
-    const terms = block.children.map(c=> deNum(c.Rt));
     steps.push({
       title:"Reihenschaltung "+blockLabel(block),
-      html:`R = R<sub>1</sub> + R<sub>2</sub> + … = ${block.children.map(c=>deNum(c.Rt)).join(" Ω + ")} Ω = <span class="res">${fmtStr(block.Rt,"Ω")}</span>`
+      html:`R = R<sub>1</sub> + R<sub>2</sub> + … = ${kids.map(c=>deNum(c.Rt)).join(" Ω + ")} Ω = <span class="res">${fmtStr(block.Rt,"Ω")}</span>`
     });
   } else {
-    const inv = block.children.map(c=> `<span style="white-space:nowrap">1/${deNum(c.Rt)} Ω</span>`).join(" + ");
+    const inv = kids.map(c=> `<span style="white-space:nowrap">1/${deNum(c.Rt)} Ω</span>`).join(" + ");
     let extra = "";
-    if(block.children.length===2){
-      const a=block.children[0].Rt, b=block.children[1].Rt;
+    if(kids.length===2){
+      const a=kids[0].Rt, b=kids[1].Rt;
       extra = `<div style="margin-top:4px">bzw. R = <span class="frac"><span class="num">R<sub>1</sub>·R<sub>2</sub></span><span class="den">R<sub>1</sub>+R<sub>2</sub></span></span> = <span class="frac"><span class="num">${deNum(a)}·${deNum(b)}</span><span class="den">${deNum(a)}+${deNum(b)}</span></span> Ω = <span class="res">${fmtStr(block.Rt,"Ω")}</span></div>`;
     }
     steps.push({
@@ -648,63 +988,212 @@ function rgesSteps(block, steps){
   return steps;
 }
 
+const _frac=(a,b)=>`<span class="frac"><span class="num">${a}</span><span class="den">${b}</span></span>`;
+function _solStep(n,title,inner){ return `<div class="sol-step"><div class="st-title">${n}) ${title}</div>${inner}</div>`; }
+// Musterlösung NUR für die gefragten Größen; berücksichtigt Berechenbarkeit
+// (Rechenweg) bzw. ob die Größe nur per (verfügbarer) Messung ermittelbar ist.
 function buildSolutionHTML(task){
   const r = solve(task);
-  const ask = task.ask || {};
-  const askR = task.askR || {};
+  const ask = task.ask || {}, askR = task.askR || {};
+  const ls = consumers(task.circuit);
+  const perAsked = ls.filter(l=>{ const a=askR[l.id]||{}; return a.U||a.I||a.P||a.R; });
+  const anything = ask.Rges||ask.Iges||ask.Pges||ask.W||ask.kosten||ask.eta||perAsked.length;
   let h = `<h3>💡 Musterlösung mit Rechenweg</h3>`;
+  if(!anything) return h + '<div class="muted">Keine gesuchten Größen ausgewählt.</div>';
 
-  // 1) Gesamtwiderstand
-  if(task.circuit.kind!=="r"){
-    h += `<div class="sol-step"><div class="st-title">1) Gesamtwiderstand R<sub>ges</sub></div>`;
-    rgesSteps(task.circuit).forEach(s=>{
-      h += `<div style="margin:5px 0"><span class="muted" style="font-size:12px">${s.title}</span><br><span class="formula">${s.html}</span></div>`;
-    });
-    h += `<div class="formula">R<sub>ges</sub> = <span class="res">${fmtStr(r.Rges,"Ω")}</span></div></div>`;
-  } else {
-    h += `<div class="sol-step"><div class="st-title">1) Gesamtwiderstand</div>
-      <div class="formula">R<sub>ges</sub> = R<sub>1</sub> = <span class="res">${fmtStr(r.Rges,"Ω")}</span></div></div>`;
-  }
-
-  // 2) Gesamtstrom (Ohmsches Gesetz)
-  h += `<div class="sol-step"><div class="st-title">2) Gesamtstrom I<sub>ges</sub> (Ohmsches Gesetz)</div>
-    <div class="formula">I<sub>ges</sub> = <span class="frac"><span class="num">U</span><span class="den">R<sub>ges</sub></span></span> = <span class="frac"><span class="num">${deNum(task.U)} V</span><span class="den">${deNum(r.Rges)} Ω</span></span> = <span class="res">${fmtStr(r.Iges,"A")}</span></div></div>`;
-
-  // 3) Einzelwerte je Widerstand
-  const ls = leaves(task.circuit);
-  if(ls.length>1){
-    h += `<div class="sol-step"><div class="st-title">3) Werte der einzelnen Widerstände</div>`;
-    ls.forEach(l=>{
-      h += `<div style="margin:7px 0"><b>${l.label}</b> (R = ${fmtStr(l.R,"Ω")}):<br>
-        <span class="formula">I<sub>${subOf(l.label)}</sub> = ${fmtStr(l.I,"A")}</span>
-        <span class="formula">U<sub>${subOf(l.label)}</sub> = R·I = ${deNum(l.R)} Ω · ${deNum(l.I)} A = <span class="res">${fmtStr(l.U,"V")}</span></span>
-        <span class="formula">P<sub>${subOf(l.label)}</sub> = U·I = <span class="res">${fmtStr(l.P,"W")}</span></span></div>`;
-    });
-    h += `</div>`;
-  }
-
-  // 4) Gesamtleistung
-  h += `<div class="sol-step"><div class="st-title">4) Gesamtleistung P<sub>ges</sub></div>
-    <div class="formula">P<sub>ges</sub> = U · I<sub>ges</sub> = ${deNum(task.U)} V · ${deNum(r.Iges)} A = <span class="res">${fmtStr(r.Pges,"W")}</span></div>
-    <div class="muted" style="font-size:12px">auch: P = R·I² = U²/R</div></div>`;
-
-  // 5) Arbeit / Energiekosten
-  if(r.W != null){
-    h += `<div class="sol-step"><div class="st-title">5) Elektrische Arbeit &amp; Energiekosten</div>
-      <div class="formula">W = P · t = ${fmtStr(r.Pges,"W")} · ${deNum(r.t)} h = <span class="res">${deNum(r.WkWh)} kWh</span></div>`;
-    if(r.kosten!=null){
-      h += `<div class="formula">Kosten = W · Preis = ${deNum(r.WkWh)} kWh · ${deNum(r.price)} €/kWh = <span class="res">${deNum(r.kosten,4)} €</span></div>`;
+  // Berechenbarkeit: rein rechnerisch (calc) vs. mit verfügbarer Messung (meas)
+  const calcA = analyzeSolvability(task, null);
+  const gateOff = solveMeasureMode(task)==="off";
+  const measSet = (!gateOff && anyMeterMode(task)) ? taskMeterModes(task) : null;
+  const modes = measSet || {};
+  const measA = measSet ? analyzeSolvability(task, measSet) : calcA;
+  const stRoot = q => calcA.root.k[q] ? "calc" : (measA.root.k[q] ? "meas" : "none");
+  const stLeaf = (id,q) => { const c=calcA.leaf(id), m=measA.leaf(id); return c.k[q] ? "calc" : (m.k[q] ? "meas" : "none"); };
+  let usedMeas=false, usedMeasCalc=false, usedNone=false;
+  const measLine=(label,valStr)=>{ usedMeas=true; return `<div class="formula">${label} = <span class="res">${valStr}</span> <span class="muted" style="font-size:11px">🔧 direkt messen</span></div>`; };
+  const noneLine=(label,why)=>{ usedNone=true; return `<div class="formula" style="color:var(--bad)">${label} – nicht ermittelbar${why?' ('+why+')':''}</div>`; };
+  // calc → Rechenweg; meas + direkt messbar → 🔧 messen; meas + nicht direkt messbar → 📐 aus Messwerten berechnen; sonst nicht ermittelbar
+  const pick=(status,label,calcHTML,valStr,why,directMeasurable)=>{
+    if(status==="calc") return `<div class="formula">${calcHTML}</div>`;
+    if(status==="meas"){
+      if(directMeasurable) return measLine(label,valStr);
+      if(calcHTML){ usedMeasCalc=true; return `<div class="formula">${calcHTML} <span class="muted" style="font-size:11px">📐 aus Messwerten berechnen</span></div>`; }
+      return measLine(label,valStr);
     }
-    h += `</div>`;
+    return noneLine(label,why);
+  };
+
+  let n=0;
+  if(ask.Rges){
+    n++; const s=stRoot("R");
+    let inner;
+    if(s==="calc"){
+      if(task.circuit.kind!=="r"){
+        inner = rgesSteps(task.circuit).map(x=>
+          `<div style="margin:5px 0"><span class="muted" style="font-size:12px">${x.title}</span><br><span class="formula">${x.html}</span></div>`).join("");
+        inner += `<div class="formula">R<sub>ges</sub> = <span class="res">${fmtStr(r.Rges,"Ω")}</span></div>`;
+      } else inner = `<div class="formula">R<sub>ges</sub> = R<sub>1</sub> = <span class="res">${fmtStr(r.Rges,"Ω")}</span></div>`;
+    } else inner = pick(s,"R<sub>ges</sub>","",fmtStr(r.Rges,"Ω"),"R unbekannt",!!modes.R);
+    h += _solStep(n,"Gesamtwiderstand R<sub>ges</sub>", inner);
   }
-  // 6) Wirkungsgrad
-  if(r.eta != null){
-    h += `<div class="sol-step"><div class="st-title">6) Wirkungsgrad η</div>
-      <div class="formula">η = <span class="frac"><span class="num">P<sub>ab</sub></span><span class="den">P<sub>zu</sub></span></span> = <span class="frac"><span class="num">${deNum(r.Pges)} W</span><span class="den">${deNum(r.Pzu)} W</span></span> = ${deNum(r.eta,3)} = <span class="res">${deNum(r.eta*100,3)} %</span></div></div>`;
+  if(ask.Iges){
+    n++; const s=stRoot("I");
+    const calcHTML = `I<sub>ges</sub> = ${_frac("U","R<sub>ges</sub>")} = ${_frac(deNum(task.U)+" V", deNum(r.Rges)+" Ω")} = <span class="res">${fmtStr(r.Iges,"A")}</span>`;
+    h += _solStep(n,"Gesamtstrom I<sub>ges</sub>", pick(s,"I<sub>ges</sub>",calcHTML,fmtStr(r.Iges,"A"),"R<sub>ges</sub> unbekannt",!!modes.I));
+  }
+  if(perAsked.length){
+    n++; let inner="";
+    perAsked.forEach(l=>{
+      const a=askR[l.id]||{}, s=subOf(l.label), given=(l.showR!==false);
+      inner += `<div style="margin:7px 0"><b>${l.label}</b>:`;
+      if(a.R){
+        if(given) inner += `<div class="formula">R<sub>${s}</sub> = <span class="res">${fmtStr(l.R,"Ω")}</span> <span class="muted" style="font-size:11px">(gegeben)</span></div>`;
+        else inner += pick(stLeaf(l.id,"R"),"R<sub>"+s+"</sub>",`R<sub>${s}</sub> = ${_frac("U<sub>"+s+"</sub>","I<sub>"+s+"</sub>")} = ${_frac(deNum(l.U)+" V",deNum(l.I)+" A")} = <span class="res">${fmtStr(l.R,"Ω")}</span>`,fmtStr(l.R,"Ω"),"",!!modes.R);
+      }
+      if(a.I) inner += pick(stLeaf(l.id,"I"),"I<sub>"+s+"</sub>",`I<sub>${s}</sub> = ${_frac("U<sub>"+s+"</sub>","R<sub>"+s+"</sub>")} = <span class="res">${fmtStr(l.I,"A")}</span>`,fmtStr(l.I,"A"),"",!!modes.I);
+      if(a.U) inner += pick(stLeaf(l.id,"U"),"U<sub>"+s+"</sub>",`U<sub>${s}</sub> = R·I = ${deNum(l.R)} Ω · ${deNum(l.I)} A = <span class="res">${fmtStr(l.U,"V")}</span>`,fmtStr(l.U,"V"),"",!!modes.U);
+      if(a.P) inner += pick(stLeaf(l.id,"P"),"P<sub>"+s+"</sub>",`P<sub>${s}</sub> = U<sub>${s}</sub>·I<sub>${s}</sub> = ${deNum(l.U)} V · ${deNum(l.I)} A = <span class="res">${fmtStr(l.P,"W")}</span>`,fmtStr(l.P,"W"),"",false);
+      inner += `</div>`;
+    });
+    h += _solStep(n,"Werte der gefragten Bauteile", inner);
+  }
+  if(ask.Pges){
+    n++; const s=stRoot("P");
+    const calcHTML = `P<sub>ges</sub> = U · I<sub>ges</sub> = ${deNum(task.U)} V · ${deNum(r.Iges)} A = <span class="res">${fmtStr(r.Pges,"W")}</span>`;
+    h += _solStep(n,"Gesamtleistung P<sub>ges</sub>", pick(s,"P<sub>ges</sub>",calcHTML,fmtStr(r.Pges,"W"),"U bzw. I unbekannt",false));
+  }
+  if(ask.W||ask.kosten){
+    n++; let inner=""; const sp=stRoot("P");
+    if(ask.W){
+      if(r.W==null) inner += noneLine("W","Betriebsdauer t fehlt");
+      else inner += pick(sp,"W",`W = P · t = ${fmtStr(r.Pges,"W")} · ${deNum(r.t)} h = <span class="res">${deNum(r.WkWh)} kWh</span>`,deNum(r.WkWh)+" kWh","P<sub>ges</sub> unbekannt",false);
+    }
+    if(ask.kosten){
+      if(r.kosten==null) inner += noneLine("Kosten", r.W==null?"t fehlt":"Strompreis fehlt");
+      else inner += pick(sp,"Kosten",`Kosten = W · Preis = ${deNum(r.WkWh)} kWh · ${deNum(r.price)} €/kWh = <span class="res">${deNum(r.kosten,4)} €</span>`,deNum(r.kosten,4)+" €","P<sub>ges</sub> unbekannt",false);
+    }
+    h += _solStep(n,"Elektrische Arbeit &amp; Energiekosten", inner);
+  }
+  if(ask.eta){
+    n++; const sp=stRoot("P");
+    let inner;
+    if(r.eta==null) inner = noneLine("η","P<sub>zu</sub> fehlt");
+    else inner = pick(sp,"η",`η = ${_frac("P<sub>ab</sub>","P<sub>zu</sub>")} = ${_frac(deNum(r.Pges)+" W",deNum(r.Pzu)+" W")} = ${deNum(r.eta,3)} = <span class="res">${deNum(r.eta*100,3)} %</span>`,deNum(r.eta*100,3)+" %","P<sub>ges</sub> unbekannt",false);
+    h += _solStep(n,"Wirkungsgrad η", inner);
+  }
+  if(usedMeas || usedMeasCalc || usedNone){
+    h += '<div class="muted" style="font-size:11.5px;margin-top:6px">'+
+      (usedMeas?'🔧 = direkt mit dem Multimeter messen. ':'')+
+      (usedMeasCalc?'📐 = aus gemessenen Werten berechnen. ':'')+
+      (usedNone?'Rot = mit den aktuellen Angaben/Messmöglichkeiten nicht ermittelbar.':'')+'</div>';
   }
   return h;
 }
-function subOf(label){ return label.replace(/^R/,""); }
+function subOf(label){ return label.replace(/^[A-Za-z]+/,""); }
+
+/* ============================================================================
+   5b) LÖSBARKEITS-ANALYSE (für den Editor)
+   Bestimmt per Constraint-Propagation, welche Größen aus den GEGEBENEN
+   (Quellenspannung, angezeigte Widerstände, Zusatzangaben) – optional
+   zzgl. Messung – berechenbar sind. Pro Block: bekannt? R/U/I/P.
+   ============================================================================ */
+// Erlaubte Messgrößen der Aufgabe (Default: alle erlaubt, wenn nichts gesetzt).
+function taskMeterModes(task){
+  const m = task.meterModes || {};
+  return {U: m.U!==false, I: m.I!==false, R: m.R!==false};
+}
+function anyMeterMode(task){ const m=taskMeterModes(task); return m.U||m.I||m.R; }
+function analyzeSolvability(task, measureSet){
+  const nodes=[];
+  (function visit(block, parent){
+    const node={block, kind:block.kind, parent, children:[], k:{R:false,U:false,I:false,P:false}};
+    nodes.push(node);
+    if(block.kind!=="r") node.children = block.children.map(c=>visit(c, node));
+    return node;
+  })(task.circuit, null);
+  const root = nodes[0];
+  // Anfangswissen
+  nodes.forEach(n=>{
+    if(n.kind==="r"){
+      const c = compOf(n.block);
+      if(c.control) n.k.R = true;                 // idealer Kontakt (0 Ω)
+      else if(n.block.showR!==false) n.k.R = true; // angezeigter/gegebener Widerstand
+    }
+  });
+  root.k.U = true;                                 // Quellenspannung ist gegeben
+  if(measureSet) nodes.forEach(n=>{                // messbare Größen je erlaubtem Modus
+    if(measureSet.U) n.k.U=true;
+    if(measureSet.I) n.k.I=true;
+    if(measureSet.R) n.k.R=true;
+  });
+  // Summenregel: parent.q = f(children.q) – Berechenbarkeit identisch für Reihen-Summe,
+  // Parallel-Stromsumme und Parallel-Leitwertsumme.
+  function sumRule(parent, q){
+    let ch=false;
+    const unknown = parent.children.filter(c=>!c.k[q]);
+    if(unknown.length===0 && !parent.k[q]){ parent.k[q]=true; ch=true; }
+    else if(parent.k[q] && unknown.length===1){ unknown[0].k[q]=true; ch=true; }
+    return ch;
+  }
+  let changed=true, guard=0;
+  while(changed && guard++<300){
+    changed=false;
+    nodes.forEach(n=>{
+      // Ohmsches Gesetz + Leistung innerhalb des Elements
+      const base=(n.k.R?1:0)+(n.k.U?1:0)+(n.k.I?1:0);
+      if((base>=2 || (n.k.P&&base>=1)) && !(n.k.R&&n.k.U&&n.k.I&&n.k.P)){
+        n.k.R=n.k.U=n.k.I=n.k.P=true; changed=true;
+      }
+      if(n.kind==="series"){
+        const anyI = n.k.I || n.children.some(c=>c.k.I);   // gleicher Strom
+        if(anyI){ if(!n.k.I){n.k.I=true;changed=true;} n.children.forEach(c=>{ if(!c.k.I){c.k.I=true;changed=true;} }); }
+        if(sumRule(n,"R")) changed=true;
+        if(sumRule(n,"U")) changed=true;
+        if(sumRule(n,"P")) changed=true;
+      } else if(n.kind==="parallel"){
+        const anyU = n.k.U || n.children.some(c=>c.k.U);   // gleiche Spannung
+        if(anyU){ if(!n.k.U){n.k.U=true;changed=true;} n.children.forEach(c=>{ if(!c.k.U){c.k.U=true;changed=true;} }); }
+        if(sumRule(n,"R")) changed=true;                    // 1/R-Summe (gleiche Berechenbarkeit)
+        if(sumRule(n,"I")) changed=true;
+        if(sumRule(n,"P")) changed=true;
+      }
+    });
+  }
+  return {nodes, root, leaf:(id)=>nodes.find(n=>n.kind==="r"&&n.block.id===id)};
+}
+// Verfügbarkeit des Messgeräts: 'always' | 'timed' | 'off'
+function solveMeasureMode(task){ return (task.gates&&task.gates.measure&&task.gates.measure.mode)||"always"; }
+// Bewertet die gesuchten Größen anhand einer Analyse a → [{label, ok, hint}]
+function evalTargets(a, task){
+  const ex = task.extras||{}, ask = task.ask||{}, askR = task.askR||{};
+  const items=[];
+  const add=(label, ok, hint)=> items.push({label, ok, hint});
+  if(ask.Rges) add("Gesamtwiderstand R_ges", a.root.k.R);
+  if(ask.Iges) add("Gesamtstrom I_ges", a.root.k.I);
+  if(ask.Pges) add("Gesamtleistung P_ges", a.root.k.P);
+  consumers(task.circuit).forEach(l=>{
+    const n=a.leaf(l.id), q=askR[l.id]||{}, s=subOf(l.label);
+    if(q.U) add("U"+s+" ("+l.label+")", n.k.U);
+    if(q.I) add("I"+s+" ("+l.label+")", n.k.I);
+    if(q.P) add("P"+s+" ("+l.label+")", n.k.P);
+    if(q.R) add("R"+s+" ("+l.label+")", n.k.R);
+  });
+  if(ask.W)      add("Elektrische Arbeit W", a.root.k.P && ex.t!=null, ex.t==null?"Betriebsdauer t fehlt":"");
+  if(ask.kosten) add("Energiekosten", a.root.k.P && ex.t!=null && ex.price!=null, (ex.t==null?"t fehlt ":"")+(ex.price==null?"Strompreis fehlt":""));
+  if(ask.eta)    add("Wirkungsgrad η", a.root.k.P && ex.Pzu!=null && ex.Pzu>0, (ex.Pzu==null||!(ex.Pzu>0))?"P_zu fehlt":"");
+  return items;
+}
+function solvabilityReport(task, consider){
+  // 1) rein rechnerisch (nur gegebene/angezeigte Werte)
+  const calc = evalTargets(analyzeSolvability(task, null), task);
+  // 2) zusätzlich mit der TATSÄCHLICH verfügbaren Messung (Status + freigegebene Messgrößen)
+  const gateMode = solveMeasureMode(task);
+  const meterAvailable = gateMode !== "off";
+  const measSet = (consider && meterAvailable) ? taskMeterModes(task) : null;
+  const meas = measSet ? evalTargets(analyzeSolvability(task, measSet), task) : calc;
+  const items = calc.map((c,i)=> ({label:c.label, hint:c.hint, calc:c.ok, meas:meas[i].ok}));
+  return {items, gateMode, meterAvailable, measSet, considered:!!measSet};
+}
 
 /* ============================================================================
    6) FRAGEN-DEFINITION & PRÜFUNG
@@ -716,13 +1205,14 @@ function buildQuestions(task){
   const ask = task.ask||{}, askR = task.askR||{};
   if(ask.Rges)   qs.push({key:"Rges", label:"Gesamtwiderstand R<sub>ges</sub>", base:"Ω", val:r.Rges, formula:"R₁+R₂… bzw. 1/R…"});
   if(ask.Iges)   qs.push({key:"Iges", label:"Gesamtstrom I<sub>ges</sub>", base:"A", val:r.Iges, formula:"I = U / R"});
-  // pro Widerstand
-  const ls = leaves(task.circuit);
+  // pro Verbraucher
+  const ls = consumers(task.circuit);
   ls.forEach(l=>{
     const a = askR[l.id]||{};
     if(a.U) qs.push({key:"U_"+l.id, label:"Spannung U<sub>"+subOf(l.label)+"</sub> an "+l.label, base:"V", val:l.U, formula:"U = R · I"});
     if(a.I) qs.push({key:"I_"+l.id, label:"Strom I<sub>"+subOf(l.label)+"</sub> durch "+l.label, base:"A", val:l.I, formula:"I = U / R"});
     if(a.P) qs.push({key:"P_"+l.id, label:"Leistung P<sub>"+subOf(l.label)+"</sub> an "+l.label, base:"W", val:l.P, formula:"P = U · I"});
+    if(a.R) qs.push({key:"R_"+l.id, label:"Widerstand R<sub>"+subOf(l.label)+"</sub> von "+l.label, base:"Ω", val:l.R, formula:"R = U / I"});
   });
   if(ask.Pges)   qs.push({key:"Pges", label:"Gesamtleistung P<sub>ges</sub>", base:"W", val:r.Pges, formula:"P = U · I"});
   if(ask.W && r.WkWh!=null)    qs.push({key:"W", label:"Elektrische Arbeit W", base:"kWh", val:r.WkWh, fixedUnit:"kWh", formula:"W = P · t"});
@@ -780,13 +1270,24 @@ function defaultTasks(){
     ask:{Iges:true, Pges:true, W:true, kosten:true, eta:true}, askR:{}, type:"grund",
     extras:{t:2, price:0.40, Pzu:1150}
   }));
+  // Messen & Berechnen: Widerstände unbekannt → U, I messen, P & W berechnen
+  let mr1=R(40), mr2=R(60,"lamp"); mr1.showR=false; mr2.showR=false;
+  t.push(wrap("Messen & Berechnen – Leistung (Reihenschaltung)", series([mr1,mr2]), 24, {
+    description:"Die Bauteilwerte sind unbekannt! Miss mit dem Multimeter die Spannung an R₁ und an der Lampe E₁ sowie den Strom I. Berechne daraus die Leistungen an R₁ und E₁, die Gesamtleistung P_ges und die elektrische Arbeit W (t = 2 h). Tipp: Leistung und Arbeit kann man NICHT direkt messen – nur aus U und I berechnen.",
+    type:"reihe", extras:{t:2},
+    meterModes:{U:true, I:true, R:false},
+    ask:{Pges:true, W:true},
+    askR:{[mr1.id]:{U:true, I:true, P:true}, [mr2.id]:{U:true, P:true}}
+  }));
   return t;
 
   function wrap(title, circuit, U, opt){
     return {
       id:newId("task"), title, description:opt.description||"", U, circuit,
       type:opt.type||"gemischt", extras:opt.extras||{},
-      ask:opt.ask||{}, askR:opt.askR||{}
+      ask:opt.ask||{}, askR:opt.askR||{},
+      meterModes:opt.meterModes||{U:true,I:true,R:true},
+      gates:opt.gates||{measure:{mode:"always",minutes:5}, solution:{mode:"always",minutes:10}}
     };
   }
 }
@@ -813,11 +1314,18 @@ const STATE = {
   tasks: [],
   currentId: null,
   meterMode: "U",
-  measureTarget: null,   // {kind:'r', id} | {kind:'src'}
+  probes: {red:null, black:null},  // gesetzte Messspitzen (Punkt- oder Klemmen-Objekt)
+  activeProbe: "red",              // welche Spitze als Nächstes gesetzt wird
+  cuts: new Set(),                 // aufgetrennte Leitungen (nur A-Modus)
+  allow: {measure:true, solution:true},  // aktuelle Freigaben
+  taskStart: 0,                    // Startzeitpunkt der Bearbeitung
+  gateTimer: null,                 // Intervall für die Freigabe-Logik
+  _measClosed: false,
   showValues: false,
   playing: false,
   store: null,           // render store der Schüleransicht
   editing: null,         // Editor-Arbeitskopie
+  locked: false,         // Schülerversion: Lehrkraftmodus gesperrt
 };
 const $ = (id)=>document.getElementById(id);
 function curTask(){ return STATE.tasks.find(t=>t.id===STATE.currentId) || STATE.tasks[0]; }
@@ -825,6 +1333,27 @@ function curTask(){ return STATE.tasks.find(t=>t.id===STATE.currentId) || STATE.
 /* ============================================================================
    10) SCHÜLER-ANSICHT RENDERN
    ============================================================================ */
+// Nur den Schaltplan + das Messsystem (neu) zeichnen – ohne Aufgabentext/Fragen/Timer
+// anzufassen. Wird auch beim Betätigen eines Schaltglieds aufgerufen.
+function renderSchematic(){
+  const task = curTask(); if(!task) return;
+  const svg = $("schematic");
+  STATE.store = drawCircuit(svg, task, {showValues: STATE.showValues, interactive:true});
+  attachMeterHandlers(STATE.store);
+  if(STATE.playing) svg.classList.add("sim-running"); else svg.classList.remove("sim-running");
+  applyMeterModes();               // nur erlaubte Messgrößen anzeigen + gültigen Modus sicherstellen
+  setMeterMode(STATE.meterMode);   // Modus anwenden, Schnitte/Spitzen zurücksetzen, Live-Ströme
+  $("schemHint").textContent = "Schalter/Taster anklicken = betätigen · A-Modus: Leitung anklicken = auftrennen";
+}
+// Erlaubte Messgrößen der aktuellen Aufgabe auf die Multimeter-Tasten anwenden
+function applyMeterModes(){
+  const m = taskMeterModes(curTask());
+  const allow = {U:m.U, I:m.I, R:m.R};
+  document.querySelectorAll(".meter-modes button[data-mode]").forEach(b=>{
+    b.style.display = allow[b.getAttribute("data-mode")] ? "" : "none";
+  });
+  if(!allow[STATE.meterMode]) STATE.meterMode = allow.U ? "U" : (allow.I ? "I" : "R");
+}
 function renderStudent(){
   const task = curTask(); if(!task) return;
   STATE.currentId = task.id;
@@ -832,19 +1361,21 @@ function renderStudent(){
   $("taskDescription").textContent = task.description;
   $("circTypeTag").textContent = typeName(task.type) + " · U = "+fmtStr(task.U,"V");
 
-  // Schaltplan zeichnen
-  const svg = $("schematic");
-  STATE.store = drawCircuit(svg, task, {showValues: STATE.showValues});
-  applyFlowSpeed(STATE.store);
-  attachMeterHandlers(STATE.store);
-  if(STATE.playing) svg.classList.add("sim-running"); else svg.classList.remove("sim-running");
-  refreshMeterButtons();
-  clearMeasurement();
+  renderSchematic();               // Schaltplan + Messsystem (eigene Funktion, s. u.)
+  startGateTimer();                // Bearbeitungszeit & Freigaben starten
 
   // Gegeben-Tabelle
   const gb = $("givenBody"); gb.innerHTML = "";
   addRow(gb, "Quellenspannung U", fmtStr(task.U,"V"));
-  leaves(task.circuit).forEach(l=> addRow(gb, l.label, fmtStr(l.R,"Ω")));
+  consumers(task.circuit).forEach(l=>{
+    if(l.showR===false) return;                 // R ist nicht gegeben (z. B. gesucht/messbar)
+    const c = compOf(l);
+    const name = c.letter==="R" ? l.label : l.label+" ("+c.name+")";
+    addRow(gb, name, fmtStr(l.R,"Ω"));
+  });
+  // Schaltglieder separat auflisten (ohne Widerstandswert)
+  const ctrls = leaves(task.circuit).filter(l=>compOf(l).control);
+  if(ctrls.length) addRow(gb, "Schaltglieder", ctrls.map(l=>l.label+" ("+compOf(l).name+")").join(", "));
   const ex = task.extras||{};
   if(ex.t!=null) addRow(gb,"Betriebsdauer t", deNum(ex.t)+" h");
   if(ex.price!=null) addRow(gb,"Strompreis", deNum(ex.price)+" €/kWh");
@@ -867,23 +1398,66 @@ function addRow(tbody, a, b){
   const td2=document.createElement("td"); td2.textContent=b;
   tr.appendChild(td1); tr.appendChild(td2); tbody.appendChild(tr);
 }
+// Berechenbarkeits-/Messbarkeits-Status einer einzelnen gesuchten Größe
+function qStatus(q, calcA, measA, modes){
+  const root=(qt,direct)=> calcA.root.k[qt] ? {st:"calc"} : (measA.root.k[qt] ? {st:"meas",direct:!!direct} : {st:"none"});
+  const m = q.key.match(/^([UIPR])_(.+)$/);
+  if(m){
+    const qt=m[1], id=m[2], c=calcA.leaf(id), me=measA.leaf(id);
+    if(!c||!me) return {st:"calc"};
+    if(c.k[qt]) return {st:"calc"};
+    if(me.k[qt]) return {st:"meas", direct:(qt==="U"&&modes.U)||(qt==="I"&&modes.I)||(qt==="R"&&modes.R)};
+    return {st:"none"};
+  }
+  if(q.key==="Rges") return root("R", modes.R);
+  if(q.key==="Iges") return root("I", modes.I);
+  return root("P", false);   // Pges, W, kosten, eta → über Leistung
+}
 function renderQuestions(task){
   const list = $("questionList"); list.innerHTML="";
   const qs = buildQuestions(task);
   STATE.questions = qs;
   if(qs.length===0){ list.innerHTML = '<div class="muted">Für diese Aufgabe sind keine Rechengrößen festgelegt.</div>'; return; }
+  // Analysen für „berechenbar / nur messbar"
+  const calcA = analyzeSolvability(task, null);
+  const gateOff = solveMeasureMode(task)==="off";
+  const measSet = (!gateOff && anyMeterMode(task)) ? taskMeterModes(task) : null;
+  const measA = measSet ? analyzeSolvability(task, measSet) : calcA;
+  const modes = measSet || {};
   qs.forEach(q=>{
-    const row = document.createElement("div"); row.className="q-row";
     const unit = q.dispUnit || q.fixedUnit || q.base;
-    row.innerHTML = `
-      <div><div class="q-label">${q.label}</div><div class="q-formula">${q.formula||""}</div></div>
-      <div class="q-input">
-        <input type="text" inputmode="decimal" data-qkey="${q.key}" placeholder="?">
-        <span class="unit">${unit}</span>
-        <span class="q-status" data-status="${q.key}"></span>
-      </div>`;
-    list.appendChild(row);
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `
+      <div class="q-row">
+        <div><div class="q-label">${q.label}</div><div class="q-formula">${q.formula||""}</div></div>
+        <div class="q-input">
+          <input type="text" inputmode="decimal" data-qkey="${q.key}" placeholder="?">
+          <span class="unit">${unit}</span>
+          <span class="q-status" data-status="${q.key}"></span>
+          <button class="btn small q-rev" title="Lösung für diesen Wert anzeigen">💡</button>
+        </div>
+      </div>
+      <div class="q-sol"></div>`;
+    const solEl = wrap.querySelector(".q-sol");
+    const btn = wrap.querySelector(".q-rev");
+    btn.disabled = !STATE.allow.solution;
+    btn.addEventListener("click", ()=> revealQuestion(q, solEl, calcA, measA, modes));
+    list.appendChild(wrap);
   });
+}
+// Lösung für genau eine Größe einblenden (nur wenn Musterlösung freigegeben)
+function revealQuestion(q, solEl, calcA, measA, modes){
+  if(!STATE.allow.solution) return;
+  if(solEl.classList.contains("show")){ solEl.classList.remove("show"); solEl.innerHTML=""; return; }
+  const valStr = deNum(q.dispVal!=null?q.dispVal:q.val) + " " + (q.dispUnit||q.fixedUnit||q.base);
+  const s = qStatus(q, calcA, measA, modes);
+  let prefix, cls="";
+  if(s.st==="calc") prefix = "💡 ";
+  else if(s.st==="meas" && s.direct) prefix = "🔧 messen → ";
+  else if(s.st==="meas") prefix = "📐 aus Messwerten berechnen → ";
+  else { prefix = "ℹ "; cls=' style="color:var(--warn)"'; }
+  solEl.innerHTML = `<span${cls}>${prefix}<b>${valStr}</b>${q.formula?' <span class="muted" style="font-size:11px">('+q.formula+')</span>':''}</span>`;
+  solEl.classList.add("show");
 }
 
 /* ----- Antworten prüfen ----- */
@@ -918,86 +1492,349 @@ function checkAnswers(){
 }
 
 /* ============================================================================
-   11) MULTIMETER
+   11) MULTIMETER — Schüler verbinden / trennen den Stromkreis selbst
+   - U / Ω: Messspitzen an die blauen Anschlusspunkte (parallel)
+   - A:     Leitung selbst AUFTRENNEN (Klick) und Messgerät dazwischensetzen
    ============================================================================ */
-function attachMeterHandlers(store){
-  store.svg.querySelectorAll(".res-hit").forEach(g=>{
-    g.addEventListener("click", ()=>{ STATE.measureTarget={kind:"r", id:g.getAttribute("data-rid")}; updateMeter(); });
+const MODE_CLASS = {U:"mm-U", I:"mm-A", R:"mm-R"};
+const MODE_HINT = {
+  U:"Spannung PARALLEL messen: rote und schwarze Spitze an zwei blaue Anschlusspunkte legen.",
+  I:"Strom IN REIHE messen: 1) Leitung anklicken → auftrennen. 2) beide Messspitzen an die zwei entstandenen Klemmen legen.",
+  R:"Widerstand am stromlosen Bauteil: beide Spitzen an die Anschlüsse eines Bauteils (oder der Quelle = R_ges)."
+};
+
+/* ---- Freigaben (Messen / Musterlösung) zeitgesteuert ---- */
+function gateOpen(gate, elapsedMs){
+  if(!gate || !gate.mode || gate.mode==="always") return {open:true};
+  if(gate.mode==="off") return {open:false, off:true};
+  const need = (gate.minutes||0)*60000;
+  const rem = need - elapsedMs;
+  return {open: rem<=0, remaining: Math.max(0,rem), minutes: gate.minutes||0};
+}
+function fmtClock(ms){
+  const s = Math.ceil(ms/1000);
+  return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2);
+}
+function startGateTimer(){
+  if(STATE.gateTimer) clearInterval(STATE.gateTimer);
+  // Bearbeitungszeit nur bei echtem Aufgabenwechsel neu starten
+  if(STATE.timedTaskId !== STATE.currentId){
+    STATE.timedTaskId = STATE.currentId;
+    STATE.taskStart = Date.now();
+  }
+  STATE._measClosed = false;
+  updateGates();
+  STATE.gateTimer = setInterval(updateGates, 1000);
+}
+function stopGateTimer(){ if(STATE.gateTimer){ clearInterval(STATE.gateTimer); STATE.gateTimer=null; } }
+function updateGates(){
+  const task = curTask(); if(!task) return;
+  const elapsed = Date.now() - STATE.taskStart;
+  const gates = task.gates || {};
+  // Messgerät: gesperrt, wenn Freigabe sperrt ODER keine Messgröße erlaubt ist
+  const noModes = !anyMeterMode(task);
+  let ms = gateOpen(gates.measure, elapsed);
+  if(noModes) ms = {open:false, noModes:true};
+  STATE.allow.measure = ms.open;
+  const lock = $("meterLock");
+  if(ms.open){
+    lock.classList.add("hidden");
+    if(STATE._measClosed){ STATE._measClosed=false; setMeterMode(STATE.meterMode); } // wieder freigeben
+  }else{
+    lock.classList.remove("hidden");
+    lock.innerHTML = ms.noModes
+      ? "🔒 Für diese Aufgabe ist keine Messgröße freigegeben."
+      : ms.off
+      ? "🔒 Das Messgerät ist für diese Aufgabe deaktiviert."
+      : '🔒 Messgerät freigeschaltet in <span class="clock">'+fmtClock(ms.remaining)+'</span><br>'+
+        '<span style="font-size:12px;font-weight:400">ab '+deNum(ms.minutes)+' min Bearbeitungszeit</span>';
+    if(!STATE._measClosed){            // beim Sperren: Punkte ausblenden, Spitzen/Schnitte lösen
+      STATE._measClosed = true;
+      resetCuts(); STATE.probes={red:null,black:null}; STATE.activeProbe="red";
+      const svg = STATE.store && STATE.store.svg;
+      if(svg) Object.values(MODE_CLASS).forEach(c=>svg.classList.remove(c));
+      redrawProbes(); refreshMeterButtons();
+    }
+  }
+  // Musterlösung
+  const sg = gateOpen(gates.solution, elapsed);
+  STATE.allow.solution = sg.open;
+  const btn = $("btnSolution");
+  btn.disabled = !sg.open;
+  btn.textContent = sg.open ? "💡 Musterlösung & Rechenweg"
+    : (sg.off ? "🔒 Musterlösung deaktiviert" : "🔒 Musterlösung in "+fmtClock(sg.remaining));
+  // Pro-Größe-Einblenden ebenfalls an die Freigabe koppeln
+  document.querySelectorAll(".q-rev").forEach(b=>{
+    b.disabled = !sg.open;
+    b.title = sg.open ? "Lösung für diesen Wert anzeigen" : "Musterlösung noch nicht freigegeben";
   });
-  const src = store.svg.querySelector(".src-hit");
-  if(src) src.addEventListener("click", ()=>{ STATE.measureTarget={kind:"src"}; updateMeter(); });
+  // Wenn beide endgültig (kein laufender Timer mehr nötig) → Intervall stoppen
+  const pending = (gates.measure&&gates.measure.mode==="timed"&&!ms.open) ||
+                  (gates.solution&&gates.solution.mode==="timed"&&!sg.open);
+  if(!pending) stopGateTimer();
+}
+
+/* ---- kleiner linearer Gleichungslöser (Gauß mit Pivotierung) ---- */
+function gauss(A, z){
+  const n = z.length;
+  const M = A.map((row,i)=> row.concat([z[i]]));
+  for(let col=0; col<n; col++){
+    let piv=col; for(let r=col+1;r<n;r++) if(Math.abs(M[r][col])>Math.abs(M[piv][col])) piv=r;
+    if(Math.abs(M[piv][col])<1e-12) return null;        // singulär
+    [M[col],M[piv]]=[M[piv],M[col]];
+    const d=M[col][col];
+    for(let c=col;c<=n;c++) M[col][c]/=d;
+    for(let r=0;r<n;r++){ if(r===col) continue; const f=M[r][col];
+      if(f) for(let c=col;c<=n;c++) M[r][c]-=f*M[col][c]; }
+  }
+  return M.map(row=>row[n]);
+}
+/* ---- DC-Netzwerklöser (Modified Nodal Analysis) ----
+   cuts: Set aufgetrennter Draht-Kanten-IDs; meter:{a,b} Knoten oder null.
+   Liefert {edgeCurrent:Map(id→I), meterCurrent}. Ideale Drähte/Quelle/Messgerät
+   = 0 Ω (Stromunbekannte), Widerstände als Leitwerte. */
+function solveNetwork(graph, cuts, meter){
+  const src = graph.edges.find(e=>e.type==="V"); if(!src) return null;
+  const ground = src.b;                                  // Minuspol = Bezugsknoten (0 V)
+  // aktive Zweige
+  const branches=[];
+  graph.edges.forEach(e=>{
+    if(e.type==="R") branches.push({kind:"R", a:e.a, b:e.b, g:1/e.value, edge:e});
+    else if(e.type==="V") branches.push({kind:"V", a:e.a, b:e.b, v:e.value, edge:e});
+    // Drähte und geschlossene Schaltglieder = ideale Leiter (0 Ω); offene/aufgetrennte raus
+    else if((e.type==="W" || e.type==="SW") && !cuts.has(e.id)) branches.push({kind:"W", a:e.a, b:e.b, edge:e});
+  });
+  if(meter && meter.a!==meter.b) branches.push({kind:"A", a:meter.a, b:meter.b});
+  // Erreichbarkeit vom Bezugsknoten (verhindert singuläre, schwebende Teilnetze)
+  const adj=new Map();
+  branches.forEach(br=>{ if(br.a===br.b) return;
+    (adj.get(br.a)||adj.set(br.a,[]).get(br.a)).push(br.b);
+    (adj.get(br.b)||adj.set(br.b,[]).get(br.b)).push(br.a); });
+  const reach=new Set([ground]); const stack=[ground];
+  while(stack.length){ const n=stack.pop(); (adj.get(n)||[]).forEach(m=>{ if(!reach.has(m)){reach.add(m);stack.push(m);} }); }
+  const unk=[...reach].filter(k=>k!==ground);
+  const idx=new Map(); unk.forEach((k,i)=>idx.set(k,i));
+  const N=unk.length;
+  const g2=branches.filter(br=>br.kind!=="R" && reach.has(br.a) && reach.has(br.b));
+  const M=g2.length, size=N+M;
+  const gi=(k)=> k===ground? -1 : (idx.has(k)? idx.get(k) : -2);
+  const A=Array.from({length:size},()=>new Array(size).fill(0));
+  const z=new Array(size).fill(0);
+  branches.filter(br=>br.kind==="R" && reach.has(br.a) && reach.has(br.b)).forEach(br=>{
+    const ia=gi(br.a), ib=gi(br.b);
+    if(ia>=0) A[ia][ia]+=br.g;
+    if(ib>=0) A[ib][ib]+=br.g;
+    if(ia>=0&&ib>=0){ A[ia][ib]-=br.g; A[ib][ia]-=br.g; }
+  });
+  g2.forEach((br,k)=>{ const row=N+k, ia=gi(br.a), ib=gi(br.b);
+    if(ia>=0){ A[ia][row]+=1; A[row][ia]+=1; }
+    if(ib>=0){ A[ib][row]-=1; A[row][ib]-=1; }
+    z[row] = br.kind==="V" ? br.v : 0;                   // V(a)-V(b)=v ; W,A → 0
+  });
+  const x = size>0 ? gauss(A,z) : [];
+  if(!x) return null;
+  const V=new Map([[ground,0]]); unk.forEach((k,i)=>V.set(k,x[i]));
+  const out={edgeCurrent:new Map(), meterCurrent:null, V, reach};
+  graph.edges.forEach(e=>{
+    if(e.type==="R" && reach.has(e.a) && reach.has(e.b))
+      out.edgeCurrent.set(e.id, ((V.get(e.a)||0)-(V.get(e.b)||0))/e.value);
+  });
+  g2.forEach((br,k)=>{ const I=x[N+k]; if(br.edge) out.edgeCurrent.set(br.edge.id, I);
+                       if(br.kind==="A") out.meterCurrent=I; });
+  return out;
+}
+
+// Klick-Handler: Messpunkte (U/Ω) + Auftrenn-Linien (A)
+function attachMeterHandlers(store){
+  store.svg.querySelectorAll(".mpt-hit[data-pid]").forEach(node=>{
+    node.addEventListener("click", ()=> assignProbePoint(parseInt(node.getAttribute("data-pid"),10)));
+  });
+  store.svg.querySelectorAll(".cut-hit[data-edge]").forEach(node=>{
+    node.addEventListener("click", ()=> toggleCut(node.getAttribute("data-edge")));
+  });
+  store.svg.querySelectorAll(".op-hit[data-op]").forEach(node=>{
+    node.addEventListener("click", ()=> toggleSwitch(node.getAttribute("data-op")));
+  });
+  setSvgMode();
+}
+// Schaltglied betätigen → Schaltplan neu zeichnen (Antworten/Timer bleiben erhalten)
+function toggleSwitch(rid){
+  const l = leaves(curTask().circuit).find(x=>x.id===rid); if(!l) return;
+  l.actuated = !l.actuated;
+  renderSchematic();
+}
+function setSvgMode(){
+  const svg = STATE.store && STATE.store.svg; if(!svg) return;
+  Object.values(MODE_CLASS).forEach(c=>svg.classList.remove(c));
+  svg.classList.add(MODE_CLASS[STATE.meterMode]);
 }
 function refreshMeterButtons(){
   document.querySelectorAll(".meter-modes button").forEach(b=>{
     b.classList.toggle("active", b.getAttribute("data-mode")===STATE.meterMode);
   });
+  document.querySelectorAll(".probe-pick button[data-probe]").forEach(b=>{
+    b.classList.toggle("active", b.getAttribute("data-probe")===STATE.activeProbe);
+  });
 }
-function clearMeasurement(){
-  const svg = STATE.store && STATE.store.svg; if(!svg) return;
-  svg.querySelectorAll(".measured").forEach(e=>e.classList.remove("measured"));
-  svg.querySelectorAll(".probe,.probe-lead,.inline-meter").forEach(e=>e.remove());
-  $("meterDisplay").innerHTML = '––––<span class="mu"></span>';
-  $("measureLabel").textContent = "";
+// Modus wechseln: Schnitte zurücksetzen, Ströme auf Ausgangszustand
+function setMeterMode(mode){
+  STATE.meterMode = mode;
+  resetCuts();
+  STATE.probes = {red:null, black:null};
+  STATE.activeProbe = "red";
+  setSvgMode();
+  renderCuts();
+  redrawProbes();
+  refreshMeterButtons();
 }
-function updateMeter(){
-  const task = curTask(); const store = STATE.store; if(!store) return;
-  clearMeasurement();
-  const mode = STATE.meterMode, tgt = STATE.measureTarget;
-  if(!tgt){ return; }
-  let value, label, baseUnit;
-  if(tgt.kind==="src"){
-    if(mode==="U"){ value=task.U; label="Quellenspannung U"; baseUnit="V"; }
-    else if(mode==="I"){ value=task.circuit.I; label="Gesamtstrom I_ges"; baseUnit="A"; }
-    else { value=task.circuit.Rt; label="Gesamtwiderstand R_ges"; baseUnit="Ω"; }
-    highlightSource(store, mode);
-  }else{
-    const l = leaves(task.circuit).find(x=>x.id===tgt.id);
-    if(!l) return;
-    if(mode==="U"){ value=l.U; label="Spannung an "+l.label; baseUnit="V"; }
-    else if(mode==="I"){ value=l.I; label="Strom durch "+l.label; baseUnit="A"; }
-    else { value=l.R; label="Widerstand "+l.label; baseUnit="Ω"; }
-    highlightResistor(store, tgt.id, mode);
+function clearProbes(){
+  STATE.probes = {red:null, black:null};
+  STATE.activeProbe = "red";
+  redrawProbes();
+  refreshMeterButtons();
+}
+// alle Auftrennungen aufheben + Live-Ströme (mit Schalterstellungen) neu berechnen
+function resetCuts(){
+  STATE.cuts = new Set();
+  const st = STATE.store; if(!st) return;
+  recomputeLive(st, new Set());
+  applyFlowSpeed(st);
+  if(st.cutVis) while(st.cutVis.firstChild) st.cutVis.removeChild(st.cutVis.firstChild);
+}
+
+// --- Auftrennen ---
+function toggleCut(edgeId){
+  if(!STATE.allow.measure || STATE.meterMode!=="I") return;
+  STATE.cuts = STATE.cuts || new Set();
+  if(STATE.cuts.has(edgeId)) STATE.cuts.delete(edgeId); else STATE.cuts.add(edgeId);
+  // Messspitzen lösen, deren Klemme nicht mehr existiert
+  pruneProbesToTerminals();
+  renderCuts();
+  redrawProbes();   // berechnet auch neu (inkl. Animation)
+}
+// Menge der aktuell freigelegten Klemmen-Knoten (Endpunkte aufgetrennter Drähte)
+function exposedTerminals(){
+  const st=STATE.store, set=new Map();
+  if(!st || !STATE.cuts) return set;
+  st.graph.edges.forEach(e=>{
+    if(e.type==="W" && STATE.cuts.has(e.id)){
+      // zwei Klemmen leicht zur Lückenmitte versetzt, aber elektrisch = Endknoten
+      const dx=e.x2-e.x1, dy=e.y2-e.y1, len=Math.hypot(dx,dy)||1, ux=dx/len, uy=dy/len;
+      const mx=(e.x1+e.x2)/2, my=(e.y1+e.y2)/2;
+      set.set(e.a+"|"+e.id, {nodeKey:e.a, x:mx-ux*11, y:my-uy*11, label:"Klemme A"});
+      set.set(e.b+"|"+e.id, {nodeKey:e.b, x:mx+ux*11, y:my+uy*11, label:"Klemme B"});
+    }
+  });
+  return set;
+}
+function pruneProbesToTerminals(){
+  const term = exposedTerminals();
+  ["red","black"].forEach(p=>{
+    const v = STATE.probes[p];
+    if(v && typeof v==="object" && v.tkey && !term.has(v.tkey)) STATE.probes[p]=null;
+  });
+}
+// Schnitt-Lücken + Klemmen zeichnen
+function renderCuts(){
+  const st=STATE.store; if(!st || !st.cutVis) return;
+  const vis=st.cutVis;
+  while(vis.firstChild) vis.removeChild(vis.firstChild);
+  if(STATE.meterMode!=="I") return;
+  st.graph.edges.forEach(e=>{
+    if(e.type!=="W" || !STATE.cuts.has(e.id)) return;
+    const dx=e.x2-e.x1, dy=e.y2-e.y1, len=Math.hypot(dx,dy)||1, ux=dx/len, uy=dy/len;
+    const mx=(e.x1+e.x2)/2, my=(e.y1+e.y2)/2, h=9;
+    // Lücke (übermalt die Leitung)
+    el("rect",{x:mx-Math.abs(ux)*10-Math.abs(uy)*8, y:my-Math.abs(uy)*10-Math.abs(ux)*8,
+               width:Math.abs(ux)*20+Math.abs(uy)*16, height:Math.abs(uy)*20+Math.abs(ux)*16,
+               class:"cut-gap"}, vis);
+    // Schnittkanten quer zur Leitung
+    el("line",{x1:mx-ux*10 - uy*h, y1:my-uy*10 + ux*h, x2:mx-ux*10 + uy*h, y2:my-uy*10 - ux*h, class:"cut-edge"},vis);
+    el("line",{x1:mx+ux*10 - uy*h, y1:my+uy*10 + ux*h, x2:mx+ux*10 + uy*h, y2:my+uy*10 - ux*h, class:"cut-edge"},vis);
+  });
+  // klickbare Klemmen
+  const term=exposedTerminals();
+  term.forEach((t,tkey)=>{
+    el("circle",{cx:t.x, cy:t.y, r:4.5, class:"cut-term"},vis);
+    const hit=el("circle",{cx:t.x, cy:t.y, r:11, class:"cut-term-hit"},vis);
+    hit.addEventListener("click", ()=> assignProbeTerminal(tkey, t));
+    const tt=el("title",{},hit); tt.textContent="Messgerät hier anschließen";
+  });
+}
+
+// --- Messspitzen setzen ---
+function assignProbePoint(pid){            // U/Ω-Modus: blauer Anschlusspunkt
+  if(!STATE.allow.measure) return;
+  const p = STATE.store.points[pid];
+  STATE.probes[STATE.activeProbe] = {kind:"point", x:p.x, y:p.y, point:p, label:p.label};
+  STATE.activeProbe = STATE.activeProbe==="red"?"black":"red";
+  redrawProbes(); refreshMeterButtons();
+}
+function assignProbeTerminal(tkey, t){     // A-Modus: Klemme einer Auftrennung
+  if(!STATE.allow.measure) return;
+  STATE.probes[STATE.activeProbe] = {kind:"term", tkey, nodeKey:t.nodeKey, x:t.x, y:t.y, label:t.label};
+  STATE.activeProbe = STATE.activeProbe==="red"?"black":"red";
+  redrawProbes(); refreshMeterButtons();
+}
+
+// Messspitzen zeichnen + Messwert berechnen
+function redrawProbes(){
+  const store = STATE.store; if(!store) return;
+  const layer = store.probeLayer;
+  while(layer.firstChild) layer.removeChild(layer.firstChild);
+  const pr = STATE.probes.red, pb = STATE.probes.black;
+  if(pr) el("circle", {cx:pr.x, cy:pr.y, r:6, class:"probe-red"}, layer);
+  if(pb) el("circle", {cx:pb.x, cy:pb.y, r:6, class:"probe-black"}, layer);
+  if(pr && pb){
+    el("line", {x1:pr.x, y1:pr.y, x2:pb.x, y2:pb.y, class:"probe-lead"}, layer);
+    const lt = el("text", {x:(pr.x+pb.x)/2, y:(pr.y+pb.y)/2-8, "text-anchor":"middle", class:"probe-letter"}, layer);
+    lt.textContent = STATE.meterMode==="U" ? "V" : (STATE.meterMode==="I" ? "A" : "Ω");
   }
-  const f = fmtVal(value, baseUnit);
-  $("meterDisplay").innerHTML = `${f.num}<span class="mu">${f.unit}</span>`;
-  const hints = {U:"Spannung → Messgerät parallel.", I:"Strom → Messgerät in Reihe.", R:"Widerstand → Bauteil stromlos messen."};
-  $("measureLabel").textContent = label;
-  $("meterHint").textContent = hints[mode];
+  updateProbeReading(pr, pb);
 }
-function highlightResistor(store, rid, mode){
-  const info = store.resistors.find(r=>r.id===rid); if(!info) return;
-  const grp = store.svg.querySelector(`.res-hit[data-rid="${rid}"]`);
-  if(grp) grp.classList.add("measured");
-  const layer = store.svg;
-  if(mode==="U"){
-    // Voltmeter parallel: zwei Messspitzen an den Anschlüssen
-    drawProbe(layer, info.left, info.right, info.cy);
-  }else if(mode==="I"){
-    // Amperemeter in Reihe: kleines A-Symbol am linken Anschluss
-    drawInlineMeter(layer, info.left, info.cy, "A");
+function updateProbeReading(pr, pb){
+  const disp=$("meterDisplay"), hint=$("meterHint"), status=$("probeStatus");
+  hint.textContent = MODE_HINT[STATE.meterMode];
+  status.innerHTML = "🔴 " + (pr?escapeHtml(pr.label):"—") + "<br>⚫ " + (pb?escapeHtml(pb.label):"—");
+  const blank=()=>{ disp.innerHTML=`––––<span class="mu"></span>`; };
+  const show=(v,base)=>{ const f=fmtVal(v,base); disp.innerHTML=`${f.num}<span class="mu">${f.unit}</span>`; };
+  const err=(m)=>{ blank(); hint.textContent="⚠ "+m; };
+
+  // effektive Unterbrechungen = Auftrennungen + offene Schaltglieder
+  const eff = new Set(STATE.cuts||[]); openSwitchIds(STATE.store).forEach(id=>eff.add(id));
+
+  if(STATE.meterMode==="I"){
+    // Animation/Ströme immer aktuell halten (auch ohne gesetztes Messgerät)
+    const meter = (pr&&pb&&pr.kind==="term"&&pb.kind==="term") ? {a:pr.nodeKey, b:pb.nodeKey} : null;
+    const res = solveNetwork(STATE.store.graph, eff, meter);
+    if(res){
+      STATE.store.graph.edges.forEach(e=> e.curNow = res.edgeCurrent.has(e.id)? res.edgeCurrent.get(e.id) : 0);
+      applyFlowSpeed(STATE.store);
+    }
+    if(!pr || !pb){ blank(); return; }
+    if(pr.kind!=="term" || pb.kind!=="term"){ err("Für Strom an die Klemmen einer aufgetrennten Stelle gehen."); return; }
+    if(pr.nodeKey===pb.nodeKey){ err("Beide Spitzen liegen am selben Knoten – kein Messzweig."); return; }
+    if(res && res.meterCurrent!=null) show(Math.abs(res.meterCurrent), "A");
+    else err("Kein geschlossener Stromkreis – Messgerät überbrückt die Auftrennung nicht richtig.");
+    return;
+  }
+  if(!pr || !pb){ blank(); return; }
+  if(STATE.meterMode==="U"){
+    if(pr.kind!=="point" || pb.kind!=="point"){ err("Für Spannung die blauen Anschlusspunkte verwenden."); return; }
+    // Live-Knotenpotenziale (berücksichtigt offene Schalter: U fällt z. B. über offenem Kontakt ab)
+    const res = solveNetwork(STATE.store.graph, eff, null);
+    const va = res && res.V.has(pr.point.nodeKey) ? res.V.get(pr.point.nodeKey) : pr.point.pot;
+    const vb = res && res.V.has(pb.point.nodeKey) ? res.V.get(pb.point.nodeKey) : pb.point.pot;
+    show(va - vb, "V");
+  } else { // R
+    const a=pr.point, b=pb.point;
+    if(!a||!b){ err("Für Widerstand die blauen Anschlusspunkte verwenden."); return; }
+    if(a.rid!=null && a.rid===b.rid){ show(a.r, "Ω"); return; }
+    if(a.src && b.src && a.src!==b.src){ show(curTask().circuit.Rt, "Ω"); return; }
+    err("Widerstand eindeutig nur an EINEM Bauteil oder über die ganze Quelle messbar.");
   }
 }
-function highlightSource(store, mode){
-  const src = store.svg.querySelector(".src-hit");
-  if(src) src.classList.add("measured");
-}
-function drawProbe(layer, left, right, cy){
-  // rote + schwarze Messspitze über dem Bauteil
-  const y = cy - 40;
-  const red = el("circle", {cx:left.x, cy:left.y, r:5, class:"probe probe-red"}, layer);
-  const blk = el("circle", {cx:right.x, cy:right.y, r:5, class:"probe probe-black"}, layer);
-  el("path", {d:`M ${left.x} ${left.y} L ${left.x} ${y} L ${right.x} ${y} L ${right.x} ${right.y}`,
-              class:"probe-lead", stroke:"var(--accent2)"}, layer);
-  const t = el("text",{x:(left.x+right.x)/2, y:y-6, "text-anchor":"middle", class:"lbl-small", fill:"var(--accent2)"}, layer);
-  t.textContent="V";
-}
-function drawInlineMeter(layer, pt, cy, letter){
-  const g = el("g",{class:"inline-meter"},layer);
-  el("circle",{cx:pt.x, cy:pt.y-26, r:11, fill:"#0c1117", stroke:"var(--accent2)", "stroke-width":2.4},g);
-  const t = el("text",{x:pt.x, y:pt.y-21, "text-anchor":"middle", class:"lbl", fill:"var(--accent2)"},g);
-  t.textContent=letter;
-  el("line",{x1:pt.x, y1:pt.y, x2:pt.x, y2:pt.y-15, stroke:"var(--accent2)","stroke-width":2.4, "stroke-dasharray":"3 3"},g);
-}
+function escapeHtml(s){ return (s||"").replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
 
 /* ============================================================================
    12) EDITOR (Lehrkraft)
@@ -1011,7 +1848,21 @@ function openEditor(task){
   fillEditorForm();
   renderBuilder();
   renderQPick();
+  renderShareTaskPick();
   updatePreview();
+}
+// Arbeitskopie in die Aufgabenliste übernehmen (anlegen oder aktualisieren) + persistieren.
+// Setzt die bearbeitete Aufgabe als aktuelle, damit der Schülermodus genau diese zeigt.
+function commitEditing(){
+  if(!STATE.editing) return false;
+  syncEditingFromForm();
+  const idx = STATE.tasks.findIndex(t=>t.id===STATE.editing.id);
+  if(idx>=0) STATE.tasks[idx] = cloneTask(STATE.editing);
+  else STATE.tasks.push(cloneTask(STATE.editing));
+  STATE.currentId = STATE.editing.id;
+  saveTasks();
+  refreshTaskSelect();
+  return true;
 }
 function fillEditorForm(){
   const t = STATE.editing;
@@ -1023,15 +1874,30 @@ function fillEditorForm(){
   $("edTime").value = ex.t!=null?ex.t:"";
   $("edPrice").value = ex.price!=null?ex.price:"";
   $("edPzu").value = ex.Pzu!=null?ex.Pzu:"";
+  const gates = t.gates||{};
+  const gm = gates.measure||{mode:"always",minutes:5};
+  const gs = gates.solution||{mode:"always",minutes:10};
+  $("edGateMeasure").value = gm.mode||"always";
+  $("edGateMeasureMin").value = gm.minutes!=null?gm.minutes:5;
+  $("edGateSolution").value = gs.mode||"always";
+  $("edGateSolutionMin").value = gs.minutes!=null?gs.minutes:10;
+  const mm = taskMeterModes(t);
+  $("edModeU").checked = mm.U; $("edModeI").checked = mm.I; $("edModeR").checked = mm.R;
+  updateGateInputs();
   updateBuilderHint();
+}
+// Minuten-Felder nur aktiv, wenn „erst nach Zeit"
+function updateGateInputs(){
+  $("edGateMeasureMin").disabled = $("edGateMeasure").value!=="timed";
+  $("edGateSolutionMin").disabled = $("edGateSolution").value!=="timed";
 }
 function updateBuilderHint(){
   const type = $("edType").value;
   const hints = {
-    grund:"Genau ein Widerstand. Trage den Wert ein.",
-    reihe:"Beliebig viele Widerstände in Reihe. Mit '+ Widerstand' ergänzen.",
-    parallel:"Beliebig viele parallele Widerstände. Mit '+ Widerstand' ergänzen.",
-    gemischt:"Frei verschachtelbar: Widerstände und Gruppen (Reihe/Parallel) beliebig kombinieren."
+    grund:"Genau ein Bauteil. Typ (Widerstand/Lampe/Motor/…) und Widerstandswert wählen.",
+    reihe:"Bauteile in Reihe. Mit '+ Bauteil' bzw. '+ Gruppe' ergänzen; je Bauteil den Typ wählbar.",
+    parallel:"Parallele Bauteile. Mit '+ Bauteil' bzw. '+ Gruppe' ergänzen; je Bauteil den Typ wählbar.",
+    gemischt:"Frei verschachtelbar: Bauteile und Gruppen (Reihe/Parallel) beliebig kombinieren."
   };
   $("builderHint").textContent = hints[type]||"";
 }
@@ -1052,18 +1918,39 @@ function renderBuilder(){
   tree.appendChild(renderBuilderNode(STATE.editing.circuit, null, type));
 }
 function renderBuilderNode(block, parent, rootType){
+  const isGrund = rootType==="grund";
   if(block.kind==="r"){
     const div = document.createElement("div"); div.className="node";
     const lf = document.createElement("div"); lf.className="leaf-fields";
-    lf.innerHTML = `<span class="gtype">${block.label||"R"}</span> Widerstand
-       <input type="number" step="any" value="${block.R}" style="width:90px"> <span class="muted">Ω</span>`;
-    const inp = lf.querySelector("input");
-    inp.addEventListener("input", ()=>{ block.R = parseDE(inp.value)||0; updatePreview(); });
+    const cur = block.comp||"resistor";
+    const opt = (k)=> `<option value="${k}"${cur===k?" selected":""}>${COMPONENTS[k].name}</option>`;
+    const consumerKeys = Object.keys(COMPONENTS).filter(k=>!COMPONENTS[k].control);
+    const controlKeys  = Object.keys(COMPONENTS).filter(k=> COMPONENTS[k].control);
+    const isCtrl = compOf(block).control;
+    const showR = block.showR !== false;
+    lf.innerHTML = `<span class="gtype">${block.label||"R"}</span>
+       <select class="leaf-comp">
+         <optgroup label="Verbraucher">${consumerKeys.map(opt).join("")}</optgroup>
+         <optgroup label="Schaltglieder">${controlKeys.map(opt).join("")}</optgroup>
+       </select>
+       <span class="leaf-rwrap" ${isCtrl?'style="display:none"':''}>
+         <input type="number" step="any" value="${block.R}" style="width:90px" class="leaf-r"> <span class="muted">Ω</span>
+         <label class="leaf-showr" title="Widerstand den Schülern anzeigen (gegeben)"><input type="checkbox" class="leaf-showr-cb" ${showR?"checked":""}> R anzeigen</label></span>`;
+    const sel = lf.querySelector(".leaf-comp");
+    sel.addEventListener("change", ()=>{
+      block.comp = sel.value;
+      if(compOf(block).control) block.R = 0;             // Schaltglied: ideal (0 Ω)
+      else if(!block.R) block.R = 100;                   // sinnvoller Standardwert für Verbraucher
+      renderBuilder(); renderQPick(); updatePreview();
+    });
+    const inp = lf.querySelector(".leaf-r");
+    if(inp) inp.addEventListener("input", ()=>{ block.R = parseDE(inp.value)||0; updatePreview(); });
+    const showRcb = lf.querySelector(".leaf-showr-cb");
+    if(showRcb) showRcb.addEventListener("change", ()=>{ block.showR = showRcb.checked; updatePreview(); });
     const del = document.createElement("button"); del.className="btn small danger"; del.textContent="✕";
     del.title="entfernen";
     del.addEventListener("click", ()=>{ removeBlock(STATE.editing.circuit, block); renderBuilder(); renderQPick(); updatePreview(); });
-    // Löschen nur erlauben wenn nicht einziger Block im Grundstromkreis
-    if(!(rootType==="grund")) lf.appendChild(del);
+    if(!isGrund) lf.appendChild(del);   // im Grundstromkreis bleibt das eine Bauteil
     div.appendChild(lf);
     return div;
   }
@@ -1077,17 +1964,17 @@ function renderBuilderNode(block, parent, rootType){
   head.innerHTML = `<span class="gtype">Gruppe:</span>`;
   head.appendChild(typeSel);
 
-  // Buttons: + Widerstand, + Gruppe (nur gemischt), löschen
-  const addR = document.createElement("button"); addR.className="btn small"; addR.textContent="+ Widerstand";
+  // + Bauteil und + Gruppe in allen Schaltungsarten außer Grundstromkreis
+  const addR = document.createElement("button"); addR.className="btn small"; addR.textContent="+ Bauteil";
   addR.addEventListener("click", ()=>{ block.children.push(R(100)); renderBuilder(); renderQPick(); updatePreview(); });
-  head.appendChild(addR);
-  if(rootType==="gemischt"){
+  if(!isGrund) head.appendChild(addR);
+  if(!isGrund){
     const addG = document.createElement("button"); addG.className="btn small"; addG.textContent="+ Gruppe";
     addG.addEventListener("click", ()=>{ block.children.push(parallel([R(100),R(100)])); renderBuilder(); renderQPick(); updatePreview(); });
     head.appendChild(addG);
   }
-  // Gruppe löschen (nur wenn nicht Wurzel und gemischt)
-  if(parent && rootType==="gemischt"){
+  // Gruppe löschen (nur Untergruppen, nicht die Wurzel)
+  if(parent && !isGrund){
     const del = document.createElement("button"); del.className="btn small danger"; del.textContent="✕ Gruppe";
     del.addEventListener("click", ()=>{ removeBlock(STATE.editing.circuit, block); renderBuilder(); renderQPick(); updatePreview(); });
     head.appendChild(del);
@@ -1118,14 +2005,14 @@ function renderQPick(){
     ["W","Elektrische Arbeit W"],["kosten","Energiekosten"],["eta","Wirkungsgrad η"]
   ];
   globalOpts.forEach(([k,lab])=>{
-    glob.appendChild(checkBox(lab, !!t.ask[k], v=>{ t.ask[k]=v; }));
+    glob.appendChild(checkBox(lab, !!t.ask[k], v=>{ t.ask[k]=v; updatePreview(); }));
   });
   const rp = $("qPickResistors"); rp.innerHTML="";
   relabel(t.circuit);
-  leaves(t.circuit).forEach(l=>{
+  consumers(t.circuit).forEach(l=>{
     t.askR[l.id] = t.askR[l.id]||{};
-    ["U","I","P"].forEach(q=>{
-      rp.appendChild(checkBox(`${q}<sub>${subOf(l.label)}</sub> (${l.label})`, !!t.askR[l.id][q], v=>{ t.askR[l.id][q]=v; }));
+    ["U","I","P","R"].forEach(q=>{
+      rp.appendChild(checkBox(`${q}<sub>${subOf(l.label)}</sub> (${l.label})`, !!t.askR[l.id][q], v=>{ t.askR[l.id][q]=v; updatePreview(); }));
     });
   });
 }
@@ -1144,13 +2031,23 @@ function readExtras(){
   const pz = parseDE($("edPzu").value); if(isFinite(pz)) ex.Pzu=pz;
   return ex;
 }
+function readGates(){
+  return {
+    measure: {mode:$("edGateMeasure").value, minutes: parseDE($("edGateMeasureMin").value)||0},
+    solution:{mode:$("edGateSolution").value, minutes: parseDE($("edGateSolutionMin").value)||0}
+  };
+}
 function syncEditingFromForm(){
   const t = STATE.editing;
   t.title = $("edTitle").value.trim() || "Unbenannte Aufgabe";
   t.description = $("edDesc").value.trim();
-  t.type = $("edType").value;
   t.U = parseDE($("edU").value)||0;
   t.extras = readExtras();
+  t.gates = readGates();
+  t.meterModes = {U:$("edModeU").checked, I:$("edModeI").checked, R:$("edModeR").checked};
+  t.type = detectType(t.circuit);   // Schaltungsart aus der Struktur ableiten
+  // Dropdown + Hinweis an die erkannte Art anpassen (löst kein change-Event aus)
+  if($("edType").value !== t.type){ $("edType").value = t.type; updateBuilderHint(); }
 }
 function updatePreview(){
   syncEditingFromForm();
@@ -1168,47 +2065,254 @@ function updatePreview(){
   }catch(e){
     console.error(e);
   }
+  renderSolvability();
+  // offene Musterlösung-Vorschau live aktualisieren
+  const sb=$("prevSolutionBox");
+  if(sb && sb.classList.contains("show")){
+    try{ sb.innerHTML = buildSolutionHTML(STATE.editing); }catch(e){}
+  }
+}
+// Lösbarkeit der gesuchten Größen anzeigen (3 Stufen: berechenbar / nur messbar / nicht ermittelbar)
+function renderSolvability(){
+  const box = $("solveReport"); if(!box || !STATE.editing) return;
+  const consider = $("solveCheckMeasure") && $("solveCheckMeasure").checked;
+  const rep = solvabilityReport(STATE.editing, consider);
+  if(!rep.items.length){ box.innerHTML = '<span class="muted" style="font-size:12px">Keine gesuchten Größen ausgewählt.</span>'; return; }
+
+  const status = (i)=>{
+    if(i.calc) return {txt:"✓ berechenbar", col:"var(--ok)"};
+    if(i.meas) return {txt:"🔧 nur per Messung", col:"var(--warn)"};
+    return {txt:"✗ nicht ermittelbar", col:"var(--bad)"};
+  };
+  const allCalc = rep.items.every(i=>i.calc);
+  const allDet  = rep.items.every(i=>i.calc||i.meas);
+  let head;
+  if(allCalc) head = '<span style="color:var(--ok)">✓ Alle gesuchten Größen sind aus den gegebenen Werten berechenbar.</span>';
+  else if(allDet && consider) head = '<span style="color:var(--warn)">⚠ Einige Größen sind nicht rein rechnerisch lösbar – nur per Messung ermittelbar (🔧).</span>';
+  else if(!allDet) head = '<span style="color:var(--bad)">✗ Manche Größen sind weder berechenbar noch messbar – Aufgabe unvollständig.</span>';
+  else head = '<span style="color:var(--warn)">⚠ Nicht alle Größen sind aus den gegebenen Werten berechenbar.</span>';
+
+  let h = '<div style="font-size:12.5px;font-weight:600;margin-bottom:4px">'+head+'</div>';
+  h += '<table class="given-table"><tbody>' + rep.items.map(i=>{
+      const s=status(i);
+      const hint = (!i.calc && i.hint) ? ' <span class="muted" style="font-size:10.5px">('+i.hint+')</span>' : '';
+      return `<tr><td>${i.label}</td><td style="color:${s.col}">${s.txt}${hint}</td></tr>`;
+    }).join('') + '</tbody></table>';
+
+  if(!consider){
+    h += '<div class="muted" style="font-size:11.5px">Nur Berechnung geprüft (Messen nicht einbezogen).</div>';
+  } else if(rep.gateMode==="off"){
+    h += '<div class="muted" style="font-size:11.5px">Messgerät ist deaktiviert – nur rechnerische Lösbarkeit zählt.</div>';
+  } else if(!anyMeterMode(STATE.editing)){
+    h += '<div class="muted" style="font-size:11.5px">Keine Messgröße freigegeben – nur rechnerische Lösbarkeit zählt.</div>';
+  } else {
+    const m=taskMeterModes(STATE.editing); const lst=[m.U?"V":null,m.I?"A":null,m.R?"Ω":null].filter(Boolean).join(", ");
+    const when = rep.gateMode==="timed" ? ", erst nach Bearbeitungszeit" : "";
+    h += '<div class="muted" style="font-size:11.5px">🔧 = mit verfügbarer Messung ermittelbar (Messgrößen: '+lst+when+').</div>';
+  }
+  box.innerHTML = h;
 }
 
 /* ============================================================================
    13) IMPORT / EXPORT
    ============================================================================ */
-function download(filename, text){
-  const blob = new Blob([text], {type:"application/json"});
+function download(filename, text, mime){
+  const blob = new Blob([text], {type: mime||"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = filename;
   document.body.appendChild(a); a.click();
   setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 100);
 }
-function exportAll(){ download("elektro-aufgaben.json", JSON.stringify(STATE.tasks, null, 2)); }
+function safeName(s){ return (s||"datei").replace(/[^\wäöüÄÖÜß-]+/g,"_"); }
+// Einzelne Aufgabe → .bkeptask
 function exportOne(){
   if(!STATE.editing) return;
   syncEditingFromForm();
-  download((STATE.editing.title||"aufgabe").replace(/[^\w-]+/g,"_")+".json",
-           JSON.stringify(STATE.editing, null, 2));
+  const data = {format:"bkeptask", v:1, task: cloneTask(STATE.editing)};
+  download(safeName(STATE.editing.title||"aufgabe")+".bkeptask", JSON.stringify(data, null, 2));
 }
-function importJSON(text){
-  let data;
-  try{ data = JSON.parse(text); }catch(e){ toast("Ungültige JSON-Datei"); return; }
-  const arr = Array.isArray(data) ? data : [data];
+// Gesamte Erstellumgebung (alle Aufgaben) → .bkepenvironment
+function exportAll(){
+  const data = {format:"bkepenvironment", v:1, exported:new Date().toISOString(), tasks: STATE.tasks};
+  download("lernumgebung.bkepenvironment", JSON.stringify(data, null, 2));
+}
+// Aufgaben in die Liste aufnehmen (mit kollisionsfreien IDs)
+function addTasks(tasks){
   let added=0;
-  arr.forEach(t=>{
+  tasks.forEach(t=>{
     if(t && t.circuit){
-      if(!t.id) t.id = newId("task");
-      // doppelte IDs vermeiden
-      if(STATE.tasks.some(x=>x.id===t.id)) t.id = newId("task");
+      if(!t.id || STATE.tasks.some(x=>x.id===t.id)) t.id = newId("task");
       reIdCircuit(t.circuit);
       STATE.tasks.push(t); added++;
     }
   });
-  if(added){ saveTasks(); refreshTaskSelect(); toast(added+" Aufgabe(n) importiert"); }
-  else toast("Keine gültigen Aufgaben gefunden");
+  if(!STATE.tasks.some(t=>t.id===STATE.currentId)) STATE.currentId = STATE.tasks[0] && STATE.tasks[0].id;
+  saveTasks(); refreshTaskSelect();
+  return added;
+}
+function importFile(text){
+  let data;
+  try{ data = JSON.parse(text); }catch(e){ toast("Ungültige Datei"); return; }
+  // gesamte Umgebung
+  if(data && data.format==="bkepenvironment" && Array.isArray(data.tasks)){
+    const replace = confirm("Lernumgebung laden:\n\nOK  = vorhandene Aufgaben ERSETZEN\nAbbrechen = HINZUFÜGEN (additiv)");
+    if(replace) STATE.tasks = [];
+    const n = addTasks(data.tasks);
+    toast((replace?"Umgebung ersetzt: ":"hinzugefügt: ")+n+" Aufgabe(n)");
+    return;
+  }
+  // einzelne Aufgabe (.bkeptask) bzw. Altformate
+  let list = [];
+  if(data && data.format==="bkeptask" && data.task) list = [data.task];
+  else if(Array.isArray(data)) list = data;            // Altformat: Aufgabenliste (additiv)
+  else if(data && data.circuit) list = [data];         // Altformat: einzelne Aufgabe
+  const n = addTasks(list);
+  toast(n ? n+" Aufgabe(n) importiert" : "Keine gültigen Aufgaben gefunden");
 }
 // Widerstands-IDs neu vergeben (verhindert Kollisionen) und askR umhängen
 function reIdCircuit(circuit){
   // askR mapping bleibt am Editor-/Solve-Zeitpunkt über Label – hier nur sicherstellen, dass ids existieren
   function rec(b){ if(b.kind==="r"){ if(!b.id) b.id=newId("r"); } else b.children.forEach(rec); }
   rec(circuit);
+}
+
+/* ============================================================================
+   13b) SCHÜLERVERSION (Lehrkraftmodus gesperrt) – Link & Standalone-HTML
+   ============================================================================ */
+// UTF-8-sichere Base64-Kodierung
+function b64enc(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64dec(b64){ return decodeURIComponent(escape(atob(b64))); }
+
+// Konfiguration aus URL-Hash (#elw=…&lock=1) und eingebettetem window.__ELW_CONFIG__
+function getShareConfig(){
+  let cfg = window.__ELW_CONFIG__ ? Object.assign({}, window.__ELW_CONFIG__) : null;
+  const h = (location.hash||"").replace(/^#/,"");
+  if(h){
+    const p = new URLSearchParams(h);
+    const c = {};
+    if(p.get("lock")==="1") c.lock = true;
+    const data = p.get("elw");
+    if(data){ try{ Object.assign(c, JSON.parse(b64dec(data))); }catch(e){} }
+    if(Object.keys(c).length) cfg = Object.assign({}, cfg||{}, c);
+  }
+  return cfg;
+}
+// im Editor ausgewählte Aufgaben (für die Schülerversion)
+function selectedShareTasks(){
+  const ids = [...document.querySelectorAll('#shareTaskPick input:checked')].map(i=>i.value);
+  const pick = STATE.tasks.filter(t=> ids.includes(t.id));
+  return (pick.length ? pick : STATE.tasks).map(cloneTask);
+}
+function renderShareTaskPick(){
+  const box = $("shareTaskPick"); if(!box) return;
+  box.innerHTML = "";
+  STATE.tasks.forEach(t=>{
+    const lab=document.createElement("label");
+    const cb=document.createElement("input"); cb.type="checkbox"; cb.value=t.id; cb.checked=true;
+    const sp=document.createElement("span"); sp.textContent=t.title;
+    lab.appendChild(cb); lab.appendChild(sp); box.appendChild(lab);
+  });
+}
+function buildStudentLink(){
+  const payload = {lock:true, v:1, tasks:selectedShareTasks()};
+  const base = location.origin + location.pathname;
+  return base + "#elw=" + b64enc(JSON.stringify(payload));
+}
+async function downloadStudentHTML(){
+  const payload = {lock:true, v:1, tasks:selectedShareTasks()};
+  let html;
+  try{
+    const resp = await fetch(location.href, {cache:"no-store"});
+    html = await resp.text();
+  }catch(e){
+    html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;  // Fallback (z. B. file://)
+  }
+  const inject = '<script>window.__ELW_CONFIG__=' + JSON.stringify(payload).replace(/<\//g,"<\\/") + ';<\/script>';
+  if(html.includes("</head>")) html = html.replace("</head>", inject + "\n</head>");
+  else html = inject + "\n" + html;
+  download("elektro-lernwerkstatt-schueler.html", html, "text/html;charset=utf-8");
+  toast("Schüler-HTML heruntergeladen");
+}
+// Schüler-Link erzeugen + ins Textfeld schreiben (gemeinsame Basis für alle Methoden)
+function makeAndShowLink(){
+  commitEditing();
+  const url = buildStudentLink();
+  const out = $("shareOut"); out.style.display="block"; out.value=url;
+  return url;
+}
+function downloadBlob(filename, blob){
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 100);
+}
+// QR-Code als SVG-String (probiert EC M, dann L; null wenn zu lang)
+function makeQRSVG(text, modSize){
+  let qr=null;
+  for(const ec of ["M","L"]){
+    try{ const q=window.qrcode(0,ec); q.addData(text); q.make(); qr=q; break; }catch(e){}
+  }
+  if(!qr) return null;
+  const n=qr.getModuleCount(), q=4, s=modSize||6, px=(n+2*q)*s;
+  let rects="";
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(qr.isDark(r,c)) rects+=`<rect x="${(c+q)*s}" y="${(r+q)*s}" width="${s}" height="${s}"/>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 ${px} ${px}" shape-rendering="crispEdges"><rect width="${px}" height="${px}" fill="#fff"/><g fill="#000">${rects}</g></svg>`;
+  return {svg, modules:n, px};
+}
+// SVG zu PNG rastern (skaliert), liefert dataURL + Blob
+function rasterizeSVG(svg, scale, cb){
+  const img = new Image();
+  const u = URL.createObjectURL(new Blob([svg], {type:"image/svg+xml;charset=utf-8"}));
+  img.onload = ()=>{
+    const cv = document.createElement("canvas");
+    cv.width = img.width*scale; cv.height = img.height*scale;
+    const ctx = cv.getContext("2d"); ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, cv.width, cv.height);
+    URL.revokeObjectURL(u);
+    const dataURL = cv.toDataURL("image/png");
+    cv.toBlob(b=> cb(dataURL, b), "image/png");
+  };
+  img.src = u;
+}
+function showQR(){
+  const url = makeAndShowLink();
+  const box=$("shareQRbox"), target=$("qrTarget"), note=$("qrNote");
+  box.style.display="block";
+  const r = makeQRSVG(url, 6);
+  STATE._qrSvg = null; STATE._qrPngBlob = null;
+  if(!r){
+    target.innerHTML="";
+    note.innerHTML = "⚠ Link zu lang für einen QR-Code (zu viele/große Aufgaben). Bitte weniger Aufgaben wählen oder Link/Datei nutzen.";
+    return;
+  }
+  STATE._qrSvg = r.svg;
+  note.textContent = `QR-Code (${r.modules}×${r.modules}). Scannen · Rechtsklick zum Speichern/Kopieren.`;
+  // als echtes Bild (PNG) anzeigen → Rechtsklick „Bild speichern/kopieren" funktioniert
+  rasterizeSVG(r.svg, 4, (dataURL, blob)=>{
+    STATE._qrPngBlob = blob;
+    target.innerHTML = `<img id="qrImg" src="${dataURL}" alt="Schüler-QR-Code" `+
+      `style="display:block;width:240px;height:240px;image-rendering:pixelated;border-radius:4px">`;
+  });
+}
+function qrToPng(){
+  if(STATE._qrPngBlob){ downloadBlob("schueler-qr.png", STATE._qrPngBlob); toast("QR als PNG gespeichert"); }
+}
+function qrCopyImage(){
+  if(!STATE._qrPngBlob){ toast("Erst QR-Code erzeugen"); return; }
+  if(navigator.clipboard && window.ClipboardItem){
+    navigator.clipboard.write([ new ClipboardItem({"image/png": STATE._qrPngBlob}) ])
+      .then(()=> toast("QR-Bild in die Zwischenablage kopiert"))
+      .catch(()=> toast("Kopieren nicht möglich – Rechtsklick → Bild kopieren"));
+  } else toast("Bild-Kopieren nicht unterstützt – Rechtsklick → Bild kopieren");
+}
+function qrPrintWindow(){
+  if(!STATE._qrSvg) return;
+  const w=window.open("","_blank"); if(!w){ toast("Pop-up blockiert"); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Elektro-Lernwerkstatt – QR</title>
+    <style>body{font-family:Arial;text-align:center;padding:30px}h1{font-size:18px}</style></head>
+    <body><h1>Elektro-Lernwerkstatt – Aufgaben scannen</h1>${STATE._qrSvg}
+    <p style="color:#555;font-size:13px;word-break:break-all;max-width:600px;margin:14px auto">${$("shareOut").value}</p>
+    <script>onload=function(){print()}<\/script></body></html>`);
+  w.document.close();
 }
 
 /* ============================================================================
@@ -1228,17 +2332,29 @@ function toast(msg){
 }
 let viewMode = "student";
 function switchView(mode){
+  if(STATE.locked && mode==="teacher") return;   // Schülerversion: kein Lehrkraftmodus
+  // Beim Verlassen des Lehrkraftmodus: Editor-Änderungen automatisch übernehmen
+  if(mode==="student" && viewMode==="teacher") commitEditing();
   viewMode = mode;
   $("btnStudent").classList.toggle("active", mode==="student");
   $("btnTeacher").classList.toggle("active", mode==="teacher");
   $("studentView").classList.toggle("hidden", mode!=="student");
   $("teacherView").classList.toggle("hidden", mode!=="teacher");
   if(mode==="student"){ renderStudent(); }
-  else { openEditor(curTask()); }
+  else { stopGateTimer(); openEditor(curTask()); }
 }
 
 function init(){
-  STATE.tasks = loadTasks();
+  // Schülerversion? (Link-Hash oder eingebettete Konfiguration)
+  const cfg = getShareConfig();
+  if(cfg && Array.isArray(cfg.tasks) && cfg.tasks.length){
+    STATE.tasks = cfg.tasks;
+    STATE.tasks.forEach(t=>{ if(!t.id) t.id=newId("task"); reIdCircuit(t.circuit); });
+  } else {
+    STATE.tasks = loadTasks();
+  }
+  if(cfg && cfg.lock) applyLock();
+
   STATE.currentId = STATE.tasks[0] && STATE.tasks[0].id;
   refreshTaskSelect();
   renderStudent();
@@ -1249,7 +2365,9 @@ function init(){
 
   // Aufgabenauswahl
   $("taskSelect").addEventListener("change", e=>{
-    STATE.currentId = e.target.value;
+    const sel = e.target.value;                  // Auswahl sichern (commitEditing setzt das Dropdown zurück)
+    if(viewMode==="teacher") commitEditing();    // aktuelle Bearbeitung sichern, bevor gewechselt wird
+    STATE.currentId = sel;
     if(viewMode==="student") renderStudent(); else openEditor(curTask());
   });
 
@@ -1268,23 +2386,43 @@ function init(){
   });
   $("btnCheck").addEventListener("click", checkAnswers);
   $("btnSolution").addEventListener("click", ()=>{
+    if(!STATE.allow.solution) return;
     const box=$("solutionBox"); box.innerHTML = buildSolutionHTML(curTask()); box.classList.add("show");
     box.scrollIntoView({behavior:"smooth", block:"nearest"});
   });
   $("btnReset").addEventListener("click", ()=>{
     document.querySelectorAll('#questionList input').forEach(i=>i.value="");
     document.querySelectorAll('.q-status').forEach(s=>{s.textContent="";s.className="q-status";});
+    document.querySelectorAll('.q-sol').forEach(s=>{s.textContent="";s.className="q-sol";});
     $("resultBanner").className="result-banner"; $("solutionBox").className="solution";
   });
 
-  // Multimeter-Modi
+  // Multimeter-Modi (Moduswechsel setzt Schnitte & Spitzen zurück)
   document.querySelectorAll(".meter-modes button").forEach(b=>{
-    b.addEventListener("click", ()=>{ STATE.meterMode=b.getAttribute("data-mode"); refreshMeterButtons(); updateMeter(); });
+    b.addEventListener("click", ()=> setMeterMode(b.getAttribute("data-mode")));
   });
+  // Auswahl der aktiven Messspitze + Lösen
+  document.querySelectorAll(".probe-pick button[data-probe]").forEach(b=>{
+    b.addEventListener("click", ()=>{ STATE.activeProbe=b.getAttribute("data-probe"); refreshMeterButtons(); });
+  });
+  $("btnProbeClear").addEventListener("click", ()=> setMeterMode(STATE.meterMode));
 
   // Editor-Events
-  ["edTitle","edDesc","edU","edTime","edPrice","edPzu"].forEach(id=>{
+  ["edTitle","edDesc","edU","edTime","edPrice","edPzu","edGateMeasureMin","edGateSolutionMin"].forEach(id=>{
     $(id).addEventListener("input", updatePreview);
+  });
+  ["edGateMeasure","edGateSolution"].forEach(id=>{
+    $(id).addEventListener("change", ()=>{ updateGateInputs(); updatePreview(); });
+  });
+  ["edModeU","edModeI","edModeR"].forEach(id=>{ $(id).addEventListener("change", updatePreview); });
+  $("solveCheckMeasure").addEventListener("change", renderSolvability);
+  $("prevSolution").addEventListener("click", ()=>{
+    const box=$("prevSolutionBox");
+    if(box.classList.contains("show")){ box.classList.remove("show"); box.innerHTML=""; $("prevSolution").textContent="💡 Musterlösung & Rechenweg"; return; }
+    syncEditingFromForm();
+    box.innerHTML = buildSolutionHTML(STATE.editing);
+    box.classList.add("show");
+    $("prevSolution").textContent="🙈 Musterlösung ausblenden";
   });
   $("edType").addEventListener("change", ()=>{
     STATE.editing.type = $("edType").value;
@@ -1293,18 +2431,17 @@ function init(){
     updateBuilderHint(); renderBuilder(); renderQPick(); updatePreview();
   });
   $("edSave").addEventListener("click", ()=>{
-    syncEditingFromForm();
-    const idx = STATE.tasks.findIndex(t=>t.id===STATE.editing.id);
-    if(idx>=0) STATE.tasks[idx] = cloneTask(STATE.editing);
-    else { STATE.tasks.push(cloneTask(STATE.editing)); STATE.currentId=STATE.editing.id; }
-    saveTasks(); refreshTaskSelect();
+    commitEditing();
     $("edStatus").textContent = "Gespeichert ✓  ("+new Date().toLocaleTimeString("de-DE")+")";
     toast("Aufgabe gespeichert");
   });
   $("edNew").addEventListener("click", ()=>{
+    // Erst die aktuelle Bearbeitung sichern, dann eine frische Aufgabe in den Editor laden
+    commitEditing();
     const t = { id:newId("task"), title:"Neue Aufgabe", description:"", U:12, type:"reihe",
                 circuit:presetCircuit("reihe"), extras:{}, ask:{Rges:true,Iges:true}, askR:{} };
-    STATE.tasks.push(t); STATE.currentId=t.id; saveTasks(); refreshTaskSelect(); openEditor(t);
+    openEditor(t);
+    $("edStatus").textContent = "Neue Aufgabe – mit 'Speichern' übernehmen.";
     toast("Neue Aufgabe angelegt");
   });
   $("edDelete").addEventListener("click", ()=>{
@@ -1319,9 +2456,37 @@ function init(){
   $("edImport").addEventListener("click", ()=>$("importFile").click());
   $("importFile").addEventListener("change", e=>{
     const f=e.target.files[0]; if(!f) return;
-    const rd=new FileReader(); rd.onload=()=>{ importJSON(rd.result); openEditor(curTask()); }; rd.readAsText(f);
+    const rd=new FileReader(); rd.onload=()=>{ importFile(rd.result); openEditor(curTask()); }; rd.readAsText(f);
     e.target.value="";
   });
+
+  // Schülerversion bereitstellen
+  $("shareLink").addEventListener("click", ()=>{
+    const url = makeAndShowLink(); $("shareOut").select();
+    if(navigator.clipboard) navigator.clipboard.writeText(url).then(()=>toast("Schüler-Link kopiert")).catch(()=>toast("Link erzeugt – bitte kopieren"));
+    else toast("Link erzeugt – bitte kopieren");
+  });
+  $("shareQR").addEventListener("click", showQR);
+  $("shareOpen").addEventListener("click", ()=>{ const u=makeAndShowLink(); window.open(u, "_blank"); });
+  $("shareMail").addEventListener("click", ()=>{
+    const u=makeAndShowLink();
+    const body = encodeURIComponent("Hier sind deine Aufgaben für die Elektro-Lernwerkstatt:\n\n"+u+"\n\n(Link im Browser öffnen.)");
+    location.href = "mailto:?subject="+encodeURIComponent("Elektro-Lernwerkstatt – Aufgaben")+"&body="+body;
+  });
+  $("shareFile").addEventListener("click", ()=>{ commitEditing(); downloadStudentHTML(); });
+  $("qrCopy").addEventListener("click", qrCopyImage);
+  $("qrPng").addEventListener("click", qrToPng);
+  $("qrSvg").addEventListener("click", ()=>{ if(STATE._qrSvg){ downloadBlob("schueler-qr.svg", new Blob([STATE._qrSvg],{type:"image/svg+xml"})); toast("QR als SVG gespeichert"); } });
+  $("qrPrint").addEventListener("click", qrPrintWindow);
+}
+// Lehrkraftmodus ausblenden (Schülerversion) – Elemente bleiben erhalten (Handler funktionieren)
+function applyLock(){
+  STATE.locked = true;
+  viewMode = "student";
+  const tb=$("btnTeacher"); if(tb) tb.style.display="none";
+  const sb=$("btnStudent"); if(sb){ sb.classList.add("active"); sb.textContent="👩‍🎓 Schülerversion"; }
+  $("teacherView").classList.add("hidden");
+  $("studentView").classList.remove("hidden");
 }
 document.addEventListener("DOMContentLoaded", init);
 </script>

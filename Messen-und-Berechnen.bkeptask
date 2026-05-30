@@ -1,0 +1,29 @@
+{
+  "format": "bkeptask",
+  "v": 1,
+  "task": {
+    "id": "task_demo_messen_rechnen",
+    "title": "Messen & Berechnen – Leistung (Reihenschaltung)",
+    "description": "Die Bauteilwerte sind unbekannt! Miss mit dem Multimeter die Spannung an R₁ und an der Lampe E₁ sowie den Strom I. Berechne daraus die Leistungen an R₁ und E₁, die Gesamtleistung P_ges und die elektrische Arbeit W (t = 2 h). Tipp: Leistung und Arbeit kann man NICHT direkt messen – nur aus U und I berechnen.",
+    "U": 24,
+    "type": "reihe",
+    "circuit": {
+      "kind": "series",
+      "children": [
+        { "kind": "r", "id": "r_demo_1", "R": 40, "comp": "resistor", "showR": false },
+        { "kind": "r", "id": "r_demo_2", "R": 60, "comp": "lamp", "showR": false }
+      ]
+    },
+    "extras": { "t": 2 },
+    "meterModes": { "U": true, "I": true, "R": false },
+    "gates": {
+      "measure": { "mode": "always", "minutes": 5 },
+      "solution": { "mode": "always", "minutes": 10 }
+    },
+    "ask": { "Pges": true, "W": true },
+    "askR": {
+      "r_demo_1": { "U": true, "I": true, "P": true },
+      "r_demo_2": { "U": true, "P": true }
+    }
+  }
+}
