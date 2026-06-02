@@ -80,6 +80,30 @@
   /* ---------- Layout ---------- */
   main{display:grid; grid-template-columns:1.35fr 1fr; gap:14px; padding:14px; align-items:start}
   @media(max-width:980px){ main{grid-template-columns:1fr} }
+
+  /* Lernpfad-Fortschrittsleiste */
+  .path-bar{grid-column:1/-1; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 14px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .path-bar.hidden{display:none}
+  .path-bar .pb-title{font-weight:700}
+  .path-bar .pb-count{color:var(--muted); font-size:13px}
+  .path-bar .pb-track{flex:1; min-width:140px; height:10px; background:var(--field); border:1px solid var(--line); border-radius:99px; overflow:hidden}
+  .path-bar .pb-fill{height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); width:0; transition:width .3s}
+  .path-bar .pb-steps{display:flex; gap:5px; flex-wrap:wrap}
+  .path-bar .pb-dot{width:24px; height:24px; border-radius:50%; border:1px solid var(--line); background:var(--field);
+    color:var(--muted); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer}
+  .path-bar .pb-dot.done{background:var(--ok); color:#04240f; border-color:var(--ok)}
+  .path-bar .pb-dot.cur{border-color:var(--accent); color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset}
+  .path-bar .pb-dot.cur.done{color:#04240f}
+  .path-bar .pb-btns{display:flex; gap:6px}
+
+  /* Lernpfad-Editor (Lehrkraft) */
+  .path-list{display:flex; flex-direction:column; gap:5px}
+  .path-item{display:flex; align-items:center; gap:8px; background:var(--field); border:1px solid var(--line); border-radius:8px; padding:5px 8px}
+  .path-item .pi-idx{color:var(--muted); font-weight:700; width:22px; text-align:right}
+  .path-item .pi-title{flex:1}
+  .path-item .pi-btns{display:flex; gap:4px}
+  .path-empty{color:var(--muted); font-size:12.5px; padding:6px 2px}
   .card{
     background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px;
   }
@@ -196,8 +220,9 @@
   .q-input input{width:110px; text-align:right; font-family:monospace}
   .q-input .unit{color:var(--muted); width:34px; font-family:monospace; font-weight:700}
   .q-status{width:24px; text-align:center; font-size:18px}
-  .q-status.ok{color:var(--ok)} .q-status.bad{color:var(--bad)}
+  .q-status.ok{color:var(--ok)} .q-status.bad{color:var(--bad)} .q-status.warn{color:var(--warn)}
   .q-rev{padding:4px 7px; font-size:12px}
+  .q-fb{font-size:12px; margin:1px 0 7px; min-height:0}
   .q-sol{display:none; font-size:13px; padding:4px 2px 9px; border-bottom:1px solid var(--line)}
   .q-sol.show{display:block}
   .q-sol b{color:var(--accent2)}
@@ -206,6 +231,7 @@
   .result-banner.show{display:block}
   .result-banner.good{background:#06311a; color:#86efac; border:1px solid #14532d}
   .result-banner.partial{background:#3a2c06; color:#fcd34d; border:1px solid #713f12}
+  .result-banner.bad{background:#3a0a0a; color:#fca5a5; border:1px solid #7f1d1d}
 
   /* Musterlösung */
   .solution{display:none; margin-top:12px; background:var(--ink); border:1px solid var(--line); border-radius:10px; padding:14px}
@@ -261,7 +287,7 @@
   <h1><span class="ico">⚡</span> Elektro-Lernwerkstatt</h1>
   <span class="sub">U · I · R · P — messen, berechnen, kontrollieren</span>
   <div class="spacer"></div>
-  <div style="display:flex; align-items:center; gap:8px">
+  <div style="display:flex; align-items:center; gap:8px" id="taskSelectWrap">
     <label for="taskSelect" style="color:var(--muted)">Aufgabe:</label>
     <select id="taskSelect" style="min-width:230px"></select>
   </div>
@@ -274,6 +300,8 @@
 
 <!-- =================== SCHÜLER-ANSICHT =================== -->
 <main id="studentView">
+  <!-- Lernpfad-Fortschrittsleiste (nur sichtbar, wenn ein Pfad aktiv ist) -->
+  <div id="pathBar" class="path-bar hidden"></div>
   <!-- linke Spalte: Schaltplan + Messgerät -->
   <section class="card">
     <h2>🔧 Schaltplan <span class="tag" id="circTypeTag"></span></h2>
@@ -379,6 +407,15 @@
     <div class="q-pick" id="qPickResistors"></div>
     <label class="leaf-showr" style="font-size:12.5px; margin-top:8px">
       <input type="checkbox" id="edShowFormulas" checked> Formeln in der Schüleransicht anzeigen (bei „Gesucht …")</label>
+    <label class="leaf-showr" style="font-size:12.5px; margin-top:6px">
+      <input type="checkbox" id="edFeedback"> Punkte &amp; gestuftes Feedback statt nur ✓/✗</label>
+    <label class="leaf-showr" style="font-size:12.5px; margin-top:6px">
+      <input type="checkbox" id="edErrorAnalysis"> Fehleranalyse: typische Rechenfehler erkennen (z. B. G statt R, U/I vertauscht)</label>
+    <div class="row-inline" style="margin-top:6px; font-size:12.5px">
+      <label for="edTolPct">Toleranz beim Prüfen:</label>
+      <span>±</span><input type="number" id="edTolPct" step="any" min="0" value="2" style="width:64px">
+      <span class="muted">%</span>
+    </div>
 
     <div class="extras-box" id="solveBox">
       <div style="font-weight:700; margin-bottom:6px">🧮 Lösbarkeit der gesuchten Größen</div>
@@ -406,7 +443,7 @@
           <option value="off">deaktiviert</option>
           <option value="timed">erst nach Zeit</option>
         </select>
-        <input type="number" id="edGateMeasureMin" step="any" min="0" value="5" style="width:80px"> <span class="muted">min</span>
+        <span id="edGateMeasureMinWrap"><input type="number" id="edGateMeasureMin" step="any" min="0" value="5" style="width:80px"> <span class="muted">min</span></span>
       </div>
       <div class="row-inline" style="margin-top:6px">
         <label style="width:120px">📐 Messgrößen</label>
@@ -424,8 +461,8 @@
           <option value="or">nach Zeit ODER Teillösungen</option>
           <option value="and">nach Zeit UND Teillösungen</option>
         </select>
-        <input type="number" id="edGateSolutionMin" step="any" min="0" value="10" style="width:70px"> <span class="muted">min</span>
-        <input type="number" id="edGateSolutionCount" step="1" min="0" value="1" style="width:60px"> <span class="muted">richtige</span>
+        <span id="edGateSolutionMinWrap"><input type="number" id="edGateSolutionMin" step="any" min="0" value="10" style="width:70px"> <span class="muted">min</span></span>
+        <span id="edGateSolutionCountWrap"><input type="number" id="edGateSolutionCount" step="1" min="0" value="1" style="width:60px"> <span class="muted">richtige</span></span>
       </div>
       <div class="muted" style="font-size:11.5px; margin-top:5px">„nach Zeit": automatisch nach der Bearbeitungszeit (startet beim Öffnen der Aufgabe). „nach richtigen Teillösungen": sobald der Schüler die angegebene Anzahl gesuchter Größen korrekt geprüft hat. Kombinationen verknüpfen beides mit UND/ODER.</div>
     </div>
@@ -438,14 +475,76 @@
       <div class="spacer" style="flex:1"></div>
       <button class="btn small" id="edExportOne" title="Aktuelle Aufgabe als Datei">⬇ Aufgabe (.bkeptask)</button>
       <button class="btn small" id="edExport" title="Alle Aufgaben (gesamte Umgebung)">⬇ Umgebung (.bkepenvironment)</button>
-      <button class="btn small" id="edImport">⬆ Laden (.bkeptask / .bkepenvironment)</button>
-      <input type="file" id="importFile" accept=".bkeptask,.bkepenvironment,.json,application/json" class="hidden">
+      <button class="btn small" id="edImport">⬆ Laden (.bkeptask / .bkepenvironment / .bkeppath)</button>
+      <input type="file" id="importFile" accept=".bkeptask,.bkepenvironment,.bkeppath,.json,application/json" class="hidden">
     </div>
     <div class="muted" style="font-size:12px; margin-top:8px" id="edStatus"></div>
 
+  </section>
+
+  <section class="card">
+    <h2>👁 Vorschau</h2>
+    <div id="prevWrap" style="background:
+        radial-gradient(circle at 1px 1px,var(--grid) 1px,transparent 0) 0 0/22px 22px,var(--ink);
+        border:1px solid var(--line); border-radius:10px; overflow:hidden">
+      <svg id="previewSvg" viewBox="0 0 600 360" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto"></svg>
+    </div>
+    <div class="muted" style="font-size:12.5px; margin-top:8px">
+      Die Vorschau aktualisiert sich automatisch. Die berechneten Ergebnisse:
+    </div>
+    <table class="given-table" style="margin-top:6px"><tbody id="prevResults"></tbody></table>
+    <div class="row-inline" style="margin-top:10px">
+      <button class="btn small" id="prevSolution">💡 Musterlösung &amp; Rechenweg</button>
+    </div>
+    <div class="solution" id="prevSolutionBox"></div>
+
+    <hr class="hr">
+    <div style="font-weight:700; margin-bottom:4px">📄 Arbeitsblatt (Druck / PDF / Word)</div>
+    <div class="muted" style="font-size:12.5px; margin-bottom:6px">Erzeugt aus der <b>aktuell bearbeiteten Aufgabe</b> ein sauberes Handout (Schaltplan + Aufgabentext + Lösungslinien). Beim Drucken im Dialog „Als PDF speichern" wählen.</div>
+    <div class="row-inline">
+      <button class="btn small" id="wsPrint">🖨 Drucken / PDF</button>
+      <button class="btn small" id="wsWord">📝 Word (.doc)</button>
+      <label class="row-inline" style="gap:5px; font-size:13px"><input type="checkbox" id="wsSolution"> mit Musterlösung</label>
+    </div>
+
+    <div id="pathSection" class="hidden">
+      <hr class="hr">
+      <h2 style="margin-top:0">🧭 Lernpfade / Serien</h2>
+      <div class="muted" style="font-size:12.5px; margin-bottom:8px">Bündle mehrere Aufgaben zu einer Sequenz (z. B. „Reihenschaltung 1–5"). Schüler arbeiten sie mit Fortschrittsanzeige und „Weiter" der Reihe nach ab.</div>
+      <div class="row-inline">
+        <label>Pfad:</label>
+        <select id="pathSelect" style="min-width:220px"></select>
+        <button class="btn small" id="pathNew">＋ Neuer Pfad</button>
+        <button class="btn danger small" id="pathDelete">🗑 Löschen</button>
+      </div>
+      <div id="pathEditor" style="margin-top:10px">
+        <div class="row-inline"><label style="width:90px">Titel</label>
+          <input type="text" id="pathTitle" placeholder="z. B. Reihenschaltung 1–5" style="flex:1; min-width:200px"></div>
+        <div style="font-weight:700; margin:10px 0 4px; font-size:13px">Aufgaben im Pfad (Reihenfolge)</div>
+        <div id="pathTasks" class="path-list"></div>
+        <div class="row-inline" style="margin-top:8px">
+          <select id="pathAddSelect" style="min-width:240px"></select>
+          <button class="btn small" id="pathAdd">＋ Aufgabe hinzufügen</button>
+          <div class="spacer" style="flex:1"></div>
+          <button class="btn primary small" id="pathStart">▶ Im Schülermodus starten</button>
+        </div>
+        <hr class="hr">
+        <div class="row-inline">
+          <button class="btn small" id="pathExport" title="Pfad inkl. Aufgaben als Datei">⬇ Pfad (.bkeppath)</button>
+          <button class="btn small" id="pathImport">⬆ Pfad laden (.bkeppath)</button>
+          <input type="file" id="pathImportFile" accept=".bkeppath,.json,application/json" class="hidden">
+        </div>
+        <div class="muted" style="font-size:11.5px; margin-top:6px">Zum Teilen des Pfads unten bei „Als Lernpfad:" den Pfad auswählen.</div>
+      </div>
+    </div>
+
     <hr class="hr">
     <div style="font-weight:700; margin-bottom:4px">🎓 Für Schüler bereitstellen (ohne Lehrkraftmodus)</div>
-    <div class="muted" style="font-size:12.5px; margin-bottom:6px">Wähle die Aufgaben aus, die die Schüler erhalten sollen:</div>
+    <div class="row-inline" style="margin-bottom:6px">
+      <label for="sharePath">Als Lernpfad:</label>
+      <select id="sharePath" style="min-width:220px"></select>
+    </div>
+    <div class="muted" style="font-size:12.5px; margin-bottom:6px" id="shareTaskHint">Oder einzelne Aufgaben auswählen, die die Schüler erhalten sollen:</div>
     <div class="q-pick" id="shareTaskPick"></div>
     <div class="row-inline" style="margin-top:8px">
       <button class="btn primary small" id="shareLink">🔗 Link kopieren</button>
@@ -468,22 +567,6 @@
     <div class="muted" style="font-size:11.5px; margin-top:6px">Beim Öffnen über Link / QR / Datei ist der Lehrkraftmodus ausgeblendet; die Schüler sehen nur die ausgewählten Aufgaben. Link/QR am besten auf der veröffentlichten Seite (GitHub Pages) erzeugen.</div>
   </section>
 
-  <section class="card">
-    <h2>👁 Vorschau</h2>
-    <div id="prevWrap" style="background:
-        radial-gradient(circle at 1px 1px,var(--grid) 1px,transparent 0) 0 0/22px 22px,var(--ink);
-        border:1px solid var(--line); border-radius:10px; overflow:hidden">
-      <svg id="previewSvg" viewBox="0 0 600 360" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto"></svg>
-    </div>
-    <div class="muted" style="font-size:12.5px; margin-top:8px">
-      Die Vorschau aktualisiert sich automatisch. Die berechneten Ergebnisse:
-    </div>
-    <table class="given-table" style="margin-top:6px"><tbody id="prevResults"></tbody></table>
-    <div class="row-inline" style="margin-top:10px">
-      <button class="btn small" id="prevSolution">💡 Musterlösung &amp; Rechenweg</button>
-    </div>
-    <div class="solution" id="prevSolutionBox"></div>
-  </section>
 </main>
 
 <div class="toast" id="toast"></div>
@@ -1345,6 +1428,17 @@ function loadTasks(){
 function saveTasks(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(STATE.tasks)); }catch(e){ toast("Speichern fehlgeschlagen"); }
 }
+const LS_PATHS = "elektro_lernwerkstatt_paths_v1";
+function loadPaths(){
+  try{
+    const raw = localStorage.getItem(LS_PATHS);
+    if(raw){ const arr = JSON.parse(raw); if(Array.isArray(arr)) return arr; }
+  }catch(e){}
+  return [];
+}
+function savePaths(){
+  try{ localStorage.setItem(LS_PATHS, JSON.stringify(STATE.paths)); }catch(e){}
+}
 
 /* ============================================================================
    9) GLOBALER ZUSTAND & DOM-REFERENZEN
@@ -1365,9 +1459,202 @@ const STATE = {
   store: null,           // render store der Schüleransicht
   editing: null,         // Editor-Arbeitskopie
   locked: false,         // Schülerversion: Lehrkraftmodus gesperrt
+  paths: [],             // Lernpfade / Serien
+  run: null,             // aktiver Pfad im Schülermodus: {pathId, idx, done:[ids]}
+  pathEditId: null,      // im Lehrkraft-Editor bearbeiteter Pfad
 };
 const $ = (id)=>document.getElementById(id);
 function curTask(){ return STATE.tasks.find(t=>t.id===STATE.currentId) || STATE.tasks[0]; }
+
+/* ============================================================================
+   LERNPFADE / SERIEN  —  Bündeln mehrerer Aufgaben zu einer Sequenz
+   ============================================================================ */
+function pathById(id){ return STATE.paths.find(p=>p.id===id) || null; }
+function curPath(){ return pathById(STATE.pathEditId); }
+function taskTitleById(id){ const t=STATE.tasks.find(x=>x.id===id); return t?t.title:"(gelöschte Aufgabe)"; }
+
+/* ---- Schüler-Laufzeit ---- */
+function startPath(id){
+  const p = pathById(id); if(!p || !p.taskIds.length){ toast("Lernpfad ohne Aufgaben"); return; }
+  const firstIdx = p.taskIds.findIndex(tid=>STATE.tasks.some(t=>t.id===tid));
+  if(firstIdx<0){ toast("Lernpfad enthält keine gültige Aufgabe"); return; }
+  STATE.run = {pathId:id, idx:firstIdx, done:[]};
+  STATE.currentId = p.taskIds[firstIdx];
+  if(viewMode==="student") renderStudent(); else switchView("student");
+}
+function exitPath(){
+  STATE.run = null;
+  $("pathBar").classList.add("hidden");
+  $("taskSelectWrap").classList.remove("hidden");
+}
+function pathGoto(idx){
+  const p = pathById(STATE.run && STATE.run.pathId); if(!p) return;
+  idx = Math.max(0, Math.min(idx, p.taskIds.length-1));
+  const tid = p.taskIds[idx];
+  if(!STATE.tasks.some(t=>t.id===tid)) return;     // gelöschte Aufgabe überspringen wäre möglich – hier ignorieren
+  STATE.run.idx = idx; STATE.currentId = tid;
+  renderStudent();
+}
+function pathNext(){ if(STATE.run) pathGoto(STATE.run.idx+1); }
+function pathPrev(){ if(STATE.run) pathGoto(STATE.run.idx-1); }
+function pathMarkDone(){
+  if(!STATE.run) return;
+  if(!STATE.run.done.includes(STATE.currentId)){
+    STATE.run.done.push(STATE.currentId);
+    renderPathBar();
+    const p = pathById(STATE.run.pathId);
+    const ids = p ? p.taskIds.filter(tid=>STATE.tasks.some(t=>t.id===tid)) : [];
+    if(ids.length && ids.every(tid=>STATE.run.done.includes(tid))) toast("Lernpfad abgeschlossen 🎉");
+  }
+}
+function renderPathBar(){
+  const bar = $("pathBar"); if(!bar) return;
+  if(!STATE.run){ bar.classList.add("hidden"); $("taskSelectWrap").classList.remove("hidden"); return; }
+  const p = pathById(STATE.run.pathId);
+  if(!p){ exitPath(); return; }
+  const ids = p.taskIds.filter(tid=>STATE.tasks.some(t=>t.id===tid));
+  const total = ids.length;
+  const doneCount = ids.filter(tid=>STATE.run.done.includes(tid)).length;
+  const pos = ids.indexOf(STATE.currentId);
+  const pct = total ? Math.round(doneCount/total*100) : 0;
+  bar.classList.remove("hidden");
+  $("taskSelectWrap").classList.add("hidden");
+  bar.innerHTML =
+    `<span class="pb-title">🧭 ${escHtml(p.title||"Lernpfad")}</span>`+
+    `<span class="pb-count">Aufgabe ${pos+1} von ${total} · ${doneCount} erledigt</span>`+
+    `<div class="pb-track"><div class="pb-fill" style="width:${pct}%"></div></div>`+
+    `<div class="pb-steps">`+ ids.map((tid,i)=>{
+        const cls = "pb-dot"+(STATE.run.done.includes(tid)?" done":"")+(tid===STATE.currentId?" cur":"");
+        return `<div class="${cls}" data-go="${i}" title="${escHtml(taskTitleById(tid))}">${i+1}</div>`;
+      }).join("") +`</div>`+
+    `<div class="pb-btns">`+
+      `<button class="btn small" id="pbPrev" ${pos<=0?"disabled":""}>◀ Zurück</button>`+
+      `<button class="btn small primary" id="pbNext" ${pos>=total-1?"disabled":""}>Weiter ▶</button>`+
+      `<button class="btn ghost small" id="pbExit" title="Lernpfad verlassen">✕</button>`+
+    `</div>`;
+  bar.querySelectorAll(".pb-dot").forEach(d=> d.addEventListener("click", ()=>pathGoto(+d.getAttribute("data-go"))));
+  $("pbPrev").onclick = pathPrev;
+  $("pbNext").onclick = pathNext;
+  $("pbExit").onclick = ()=>{ exitPath(); refreshTaskSelect(); renderStudent(); };
+}
+
+/* ---- Lehrkraft-Editor ---- */
+function refreshPathSelect(){
+  const sel=$("pathSelect"); if(!sel) return;
+  sel.innerHTML="";
+  if(!STATE.paths.length){ const o=document.createElement("option"); o.value=""; o.textContent="(noch kein Pfad)"; sel.appendChild(o); }
+  STATE.paths.forEach(p=>{ const o=document.createElement("option"); o.value=p.id; o.textContent=p.title||"(ohne Titel)"; sel.appendChild(o); });
+  if(STATE.pathEditId && STATE.paths.some(p=>p.id===STATE.pathEditId)) sel.value=STATE.pathEditId;
+  else STATE.pathEditId = STATE.paths[0] ? STATE.paths[0].id : null;
+  if(STATE.pathEditId) sel.value=STATE.pathEditId;
+  renderPathEditor();
+  refreshSharePathSelect();
+}
+function renderPathEditor(){
+  const ed=$("pathEditor"); if(!ed) return;
+  const p=curPath();
+  if(!p){ ed.style.display="none"; return; }
+  ed.style.display="";
+  $("pathTitle").value = p.title||"";
+  const list=$("pathTasks"); list.innerHTML="";
+  if(!p.taskIds.length) list.innerHTML='<div class="path-empty">Noch keine Aufgaben – unten hinzufügen.</div>';
+  p.taskIds.forEach((tid,i)=>{
+    const row=document.createElement("div"); row.className="path-item";
+    row.innerHTML=`<span class="pi-idx">${i+1}.</span><span class="pi-title">${escHtml(taskTitleById(tid))}</span>`+
+      `<span class="pi-btns">`+
+        `<button class="btn small" data-up="${i}" ${i===0?"disabled":""}>▲</button>`+
+        `<button class="btn small" data-down="${i}" ${i===p.taskIds.length-1?"disabled":""}>▼</button>`+
+        `<button class="btn danger small" data-rm="${i}">✕</button>`+
+      `</span>`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>pathMove(+b.getAttribute("data-up"),-1));
+  list.querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>pathMove(+b.getAttribute("data-down"),1));
+  list.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>pathRemoveAt(+b.getAttribute("data-rm")));
+  const add=$("pathAddSelect"); add.innerHTML="";
+  STATE.tasks.forEach(t=>{ const o=document.createElement("option"); o.value=t.id; o.textContent=t.title; add.appendChild(o); });
+}
+function pathMove(i,dir){ const p=curPath(); if(!p) return; const j=i+dir; if(j<0||j>=p.taskIds.length) return;
+  const a=p.taskIds; const tmp=a[i]; a[i]=a[j]; a[j]=tmp; savePaths(); renderPathEditor(); }
+function pathRemoveAt(i){ const p=curPath(); if(!p) return; p.taskIds.splice(i,1); savePaths(); renderPathEditor(); }
+function pathAddTask(){ const p=curPath(); if(!p){ toast("Erst einen Pfad anlegen"); return; } const id=$("pathAddSelect").value; if(!id) return; p.taskIds.push(id); savePaths(); renderPathEditor(); }
+function pathNew(){
+  const p={id:newId("path"), title:"Neuer Lernpfad", taskIds:[]};
+  STATE.paths.push(p); STATE.pathEditId=p.id; savePaths(); refreshPathSelect();
+  const ti=$("pathTitle"); if(ti){ ti.focus(); ti.select(); }
+}
+function pathDelete(){
+  const p=curPath(); if(!p) return;
+  if(!confirm(`Lernpfad „${p.title||""}" löschen? (Die Aufgaben selbst bleiben erhalten.)`)) return;
+  STATE.paths = STATE.paths.filter(x=>x.id!==p.id);
+  STATE.pathEditId = STATE.paths[0]?STATE.paths[0].id:null;
+  savePaths(); refreshPathSelect();
+}
+function refreshSharePathSelect(){
+  const sel=$("sharePath"); if(!sel) return;
+  const prev=sel.value;
+  sel.innerHTML="";
+  const o0=document.createElement("option"); o0.value=""; o0.textContent="— kein Lernpfad (Einzelaufgaben) —"; sel.appendChild(o0);
+  STATE.paths.forEach(p=>{ const o=document.createElement("option"); o.value=p.id; o.textContent=p.title||"(ohne Titel)"; sel.appendChild(o); });
+  const oEdit=document.createElement("option"); oEdit.value="__edit__"; oEdit.textContent="➕ Lernpfad erstellen / bearbeiten"; sel.appendChild(oEdit);
+  if([...sel.options].some(o=>o.value===prev)) sel.value=prev;
+  applySharePathUI();
+}
+function applySharePathUI(){
+  const v = $("sharePath") ? $("sharePath").value : "";
+  const editing = v==="__edit__";
+  const realPath = !!v && !editing;
+  const ps=$("pathSection"); if(ps) ps.classList.toggle("hidden", !editing);
+  const dim = editing || realPath;                     // Einzelauswahl nur ohne Pfad relevant
+  const pick=$("shareTaskPick"); if(pick){ pick.style.opacity=dim?"0.4":""; pick.style.pointerEvents=dim?"none":""; }
+  const hint=$("shareTaskHint"); if(hint) hint.textContent = realPath
+    ? "Lernpfad ausgewählt – die enthaltenen Aufgaben werden in dieser Reihenfolge bereitgestellt."
+    : editing
+    ? "Lernpfad-Editor geöffnet. Für die Verteilung einzelner Aufgaben oben kein Lernpfad wählen."
+    : "Oder einzelne Aufgaben auswählen, die die Schüler erhalten sollen:";
+}
+// Aufgaben-IDs aus allen Pfaden entfernen (z. B. nach Löschen einer Aufgabe)
+function purgeTaskFromPaths(taskId){
+  let changed=false;
+  STATE.paths.forEach(p=>{ const before=p.taskIds.length; p.taskIds=p.taskIds.filter(id=>id!==taskId); if(p.taskIds.length!==before) changed=true; });
+  if(changed) savePaths();
+}
+/* ---- Pfad als .bkeppath exportieren / importieren (selbst-enthaltend inkl. Aufgaben) ---- */
+function exportPath(){
+  const p=curPath(); if(!p){ toast("Kein Pfad ausgewählt"); return; }
+  const taskIds = p.taskIds.filter(id=>STATE.tasks.some(t=>t.id===id));
+  const tasks = taskIds.map(id=>cloneTask(STATE.tasks.find(t=>t.id===id)));
+  const data = {format:"bkeppath", v:1, path:{id:p.id, title:p.title, taskIds:taskIds.slice()}, tasks};
+  download(safeName(p.title||"lernpfad")+".bkeppath", JSON.stringify(data, null, 2));
+}
+// Pfad-Bündel additiv aufnehmen (Aufgaben mit neuen IDs, Pfad-Referenzen umhängen)
+function addPathBundle(data){
+  if(!data || !data.path){ toast("Kein gültiger Lernpfad"); return; }
+  const map={};
+  (Array.isArray(data.tasks)?data.tasks:[]).forEach(t=>{
+    if(!t || !t.circuit) return;
+    const oldId=t.id;
+    if(!t.id || STATE.tasks.some(x=>x.id===t.id)) t.id=newId("task");
+    reIdCircuit(t.circuit);
+    STATE.tasks.push(t);
+    if(oldId) map[oldId]=t.id;
+  });
+  const p=Object.assign({}, data.path);
+  if(!p.id || STATE.paths.some(x=>x.id===p.id)) p.id=newId("path");
+  p.taskIds=(p.taskIds||[]).map(id=>map[id]||id).filter(id=>STATE.tasks.some(t=>t.id===id));
+  STATE.paths.push(p); STATE.pathEditId=p.id;
+  if(!STATE.tasks.some(t=>t.id===STATE.currentId)) STATE.currentId=STATE.tasks[0]&&STATE.tasks[0].id;
+  saveTasks(); savePaths(); refreshTaskSelect(); refreshPathSelect();
+  toast("Lernpfad importiert"+(p.title?": "+p.title:""));
+}
+// Den aktuell bearbeiteten Pfad im Bereitstellen-Bereich vorwählen (gemeinsame Basis fürs Teilen)
+function pathSelectForShare(){
+  const p=curPath(); if(!p){ toast("Kein Pfad ausgewählt"); return null; }
+  if(!p.taskIds.some(id=>STATE.tasks.some(t=>t.id===id))){ toast("Pfad hat keine gültigen Aufgaben"); return null; }
+  refreshSharePathSelect();
+  const sp=$("sharePath"); if(sp){ sp.value=p.id; applySharePathUI(); }
+  return p;
+}
 
 /* ============================================================================
    10) SCHÜLER-ANSICHT RENDERN
@@ -1396,6 +1683,7 @@ function applyMeterModes(){
 function renderStudent(){
   const task = curTask(); if(!task) return;
   STATE.currentId = task.id;
+  renderPathBar();                 // Lernpfad-Leiste (zeigt/versteckt sich selbst)
   $("taskTitle").textContent = task.title;
   $("taskDescription").textContent = task.description;
   $("circTypeTag").textContent = typeName(task.type) + " · U = "+fmtStr(task.U,"V");
@@ -1477,6 +1765,7 @@ function renderQuestions(task){
           <button class="btn small q-rev" title="Lösung für diesen Wert anzeigen">💡</button>
         </div>
       </div>
+      <div class="q-fb" data-fb="${q.key}"></div>
       <div class="q-sol"></div>`;
     const solEl = wrap.querySelector(".q-sol");
     const btn = wrap.querySelector(".q-rev");
@@ -1522,23 +1811,121 @@ function showSolutionStepwise(){
 }
 
 /* ----- Antworten prüfen ----- */
+// Bewertet eine Eingabe: liefert Treffer, Punkte (1 / 0,5 / 0) + gestuftes Feedback
+function gradeAnswer(userVal, expected, tolFrac){
+  if(!isFinite(userVal))
+    return {correct:false, points:0, mark:"✗", cls:"bad", msg:"Bitte eine Zahl eingeben (deutsches Format, z. B. 1,5).", color:"var(--bad)"};
+  const e = expected, ae = Math.abs(e), diff = Math.abs(userVal - e);
+  const rel = ae>1e-12 ? diff/ae : diff;
+  if(rel <= tolFrac || diff <= 1e-9)
+    return {correct:true, points:1, mark:"✓", cls:"ok", msg:"richtig", color:"var(--ok)"};
+  // Größenordnung / Einheit verwechselt? (Faktor ~10/100/1000 …)
+  let magMsg = null;
+  if(ae>1e-12 && userVal!==0){
+    const r = userVal/e;
+    for(const c of [1000,100,10,0.1,0.01,0.001]){
+      if(Math.abs(r/c - 1) < 0.05){ magMsg = `Größenordnung/Einheit prüfen (Faktor ~${deNum(c)}).`; break; }
+    }
+  }
+  // knapp daneben → halber Punkt (Rundung)
+  const nearBand = Math.max(tolFrac*5, 0.1);
+  if(rel <= nearBand && !magMsg)
+    return {correct:false, points:0.5, mark:"◐", cls:"warn", msg:"fast richtig – evtl. Rundungsfehler.", color:"var(--warn)"};
+  const msg = magMsg || (userVal>e ? "Ergebnis ist zu groß." : "Ergebnis ist zu klein.");
+  return {correct:false, points:0, mark:"✗", cls:"bad", msg, color:"var(--bad)"};
+}
+// Fehleranalyse: vergleicht den (in Basiseinheit umgerechneten) Eingabewert mit typischen
+// Falschrechnungen und liefert einen gezielten Hinweis (oder null).
+function analyzeMistake(q, ub, task, r){
+  if(!isFinite(ub)) return null;
+  const near = c => isFinite(c) && c!==0 && Math.abs(ub/c - 1) < 0.03;
+  const U = task.U;
+  const m = q.key.match(/^([UIPR])_(.+)$/);
+  if(m){
+    const qt=m[1], l=leaves(task.circuit).find(x=>x.id===m[2]); if(!l) return null;
+    if(qt==="R"){
+      if(near(1/l.R))      return "Das ist der Leitwert G = 1/R (Einheit S) – gesucht ist R = U/I.";
+      if(near(l.P))        return "Das ist die Leistung P = U·I – gesucht ist der Widerstand R = U/I.";
+      if(near(l.I/l.U))    return "U und I vertauscht: R = U/I (nicht I/U).";
+    } else if(qt==="I"){
+      if(near(l.R/l.U))    return "U und R vertauscht: I = U/R (nicht R/U).";
+      if(near(U/l.R) && Math.abs(U-l.U)>1e-9) return "Hier zählt die Teilspannung am Bauteil, nicht die Quellenspannung.";
+    } else if(qt==="U"){
+      if(near(U) && Math.abs(U-l.U)>1e-9) return "Du hast die Quellenspannung statt der Teilspannung am Bauteil eingetragen.";
+      if(near(l.R/l.I))    return "R und I geteilt statt multipliziert: U = R · I.";
+      if(near(l.I/l.R))    return "R und I falsch verknüpft: U = R · I.";
+    } else if(qt==="P"){
+      if(near(l.U/l.I))    return "Das ist der Widerstand R = U/I – gesucht ist die Leistung P = U·I.";
+      if(near(l.I/l.U))    return "Das ist der Leitwert G = I/U – gesucht ist die Leistung P = U·I.";
+      if(near(l.U)||near(l.I)) return "Multiplikation vergessen: P = U · I.";
+    }
+    return null;
+  }
+  if(q.key==="Rges"){
+    if(near(1/r.Rges)) return "Das ist der Gesamtleitwert G = 1/R – gesucht ist R_ges.";
+    if(near(r.Pges))   return "Das ist die Leistung – gesucht ist R_ges.";
+    const Rs = consumers(task.circuit).map(x=>x.R).filter(x=>isFinite(x)&&x>0);
+    if(Rs.length>1){
+      const sum = Rs.reduce((a,b)=>a+b,0), par = 1/Rs.reduce((a,b)=>a+1/b,0);
+      if(task.type==="reihe"    && near(par)) return "Reihenschaltung: Widerstände addieren (R_ges = ΣRᵢ) – nicht wie parallel zusammenfassen.";
+      if(task.type==="parallel" && near(sum)) return "Parallelschaltung: 1/R_ges = Σ 1/Rᵢ – die Widerstände werden nicht addiert.";
+    }
+    return null;
+  }
+  if(q.key==="Iges"){
+    if(near(r.Rges/U)) return "U und R vertauscht: I = U/R (nicht R/U).";
+    return null;
+  }
+  if(q.key==="Pges"){
+    if(near(U/r.Iges))      return "Das ist ein Widerstand (U/I) – gesucht ist die Leistung P = U·I.";
+    if(near(U)||near(r.Iges)) return "Multiplikation vergessen: P = U · I.";
+    return null;
+  }
+  if(q.key==="W"){
+    if(near(r.Pges/1000)) return "Du hast die Leistung (in kW) eingetragen – die Arbeit ist W = P · t.";
+    return null;
+  }
+  if(q.key==="eta"){
+    const e = q.dispVal;                       // η in % (z. B. 80)
+    if(isFinite(e)&&e!==0 && near(10000/e)) return "Du hast P_zu/P_ab gerechnet – richtig ist η = P_ab/P_zu.";
+    return null;
+  }
+  return null;
+}
 function checkAnswers(){
   const task = curTask();
+  const r = solve(task);                                       // Kontextwerte für die Fehleranalyse
   const qs = STATE.questions||[];
-  let correct=0, answered=0;
+  const fb = !!task.feedback;                                   // Punkte/Feedback-Modus?
+  const ea = !!task.errorAnalysis;                              // Fehleranalyse aktiv?
+  const tolPct = (task.tolPct!=null && isFinite(task.tolPct)) ? task.tolPct : 2;
+  const tolFrac = Math.max(tolPct/100, 0);
+  let correct=0, answered=0, points=0;
   qs.forEach(q=>{
     const inp = document.querySelector(`input[data-qkey="${q.key}"]`);
-    const st = document.querySelector(`[data-status="${q.key}"]`);
+    const st  = document.querySelector(`[data-status="${q.key}"]`);
+    const fbEl= document.querySelector(`[data-fb="${q.key}"]`);
+    if(fbEl){ fbEl.textContent=""; fbEl.removeAttribute("style"); }
     const raw = inp.value.trim();
     if(raw===""){ st.textContent=""; st.className="q-status"; return; }
     answered++;
-    const userVal = parseDE(raw);                 // Eingabe in der angezeigten Einheit
+    const userVal = parseDE(raw);                               // Eingabe in der angezeigten Einheit
     const expected = q.dispVal!=null ? q.dispVal : q.val;
-    const tol = Math.max(Math.abs(expected)*0.02, 1e-9); // 2% Toleranz
-    if(isFinite(userVal) && Math.abs(userVal-expected) <= tol){
-      st.textContent="✓"; st.className="q-status ok"; correct++;
-    }else{
-      st.textContent="✗"; st.className="q-status bad";
+    const g = gradeAnswer(userVal, expected, tolFrac);
+    if(g.correct) correct++;
+    points += g.points;
+    // Ohne Feedback-Modus: nur ✓/✗
+    st.textContent = fb ? g.mark : (g.correct ? "✓" : "✗");
+    st.className   = "q-status " + (fb ? g.cls : (g.correct ? "ok" : "bad"));
+    // Hinweistext anzeigen, wenn Feedback ODER Fehleranalyse aktiv ist
+    if((fb||ea) && fbEl && !g.correct){
+      let msg = g.msg;
+      if(ea){                                                   // gezielte Rechenfehler-Erkennung bevorzugen
+        const ub = (q.dispVal!=null && q.dispVal!==0) ? userVal*(q.val/q.dispVal) : userVal;
+        const sp = analyzeMistake(q, ub, task, r);
+        if(sp) msg = sp;
+      }
+      fbEl.textContent = msg; fbEl.style.color = fb ? g.color : "var(--bad)";
     }
   });
   // richtige Teillösungen merken (höchster erreichter Stand) → kann Musterlösung freischalten
@@ -1546,14 +1933,28 @@ function checkAnswers(){
   STATE.solvedMax = Math.max(STATE.solvedMax||0, correct);
   updateGates();
   if(!prevAllow && STATE.allow.solution) toast("Musterlösung freigeschaltet 🎉");
+  if(STATE.run && qs.length && correct===qs.length) pathMarkDone();   // Lernpfad: Aufgabe erledigt
   const banner = $("resultBanner");
   if(answered===0){ banner.className="result-banner show partial"; banner.textContent="Bitte zuerst Werte eintragen."; return; }
-  if(correct===qs.length){
+  if(fb){
+    const max = qs.length, pts = Math.round(points*10)/10, pct = Math.round(points/max*100);
+    const cls = pct>=100 ? "good" : (pct>0 ? "partial" : "bad");
+    const head = pct>=100 ? "🏆 Bestleistung!" : (pct>=50 ? "👍 Gut dabei!" : "💪 Weiter üben!");
+    banner.className = "result-banner show "+cls;
+    banner.innerHTML = `<b>${head}</b> ${deNum(pts)} von ${max} Punkten (${pct} %), ${correct} von ${qs.length} Werten exakt richtig.`+
+      (pct<100 ? ` <span class="muted" style="font-weight:400">Die Hinweise neben den Feldern helfen weiter.</span>` : "");
+  }else if(correct===qs.length){
     banner.className="result-banner show good";
     banner.textContent=`✓ Sehr gut! Alle ${qs.length} Werte sind richtig. Überprüfe sie zur Kontrolle mit dem Multimeter und der Animation.`;
   }else{
     banner.className="result-banner show partial";
-    banner.textContent=`${correct} von ${qs.length} richtig. Tipp: Miss die Werte mit dem Multimeter und schau dir die Musterlösung an.`;
+    // Tipp nur auf tatsächlich freigegebene Hilfen beziehen
+    const tips=[];
+    if(STATE.allow.measure)  tips.push("miss die Werte mit dem Multimeter");
+    if(STATE.allow.solution) tips.push("schau dir die Musterlösung an");
+    let tip="";
+    if(tips.length){ let s=tips.join(" und "); tip=" Tipp: "+s.charAt(0).toUpperCase()+s.slice(1)+"."; }
+    banner.textContent=`${correct} von ${qs.length} richtig.${tip}`;
   }
 }
 
@@ -1973,15 +2374,21 @@ function fillEditorForm(){
   const mm = taskMeterModes(t);
   $("edModeU").checked = mm.U; $("edModeI").checked = mm.I; $("edModeR").checked = mm.R;
   $("edShowFormulas").checked = t.showFormulas !== false;
+  $("edFeedback").checked = !!t.feedback;
+  $("edErrorAnalysis").checked = !!t.errorAnalysis;
+  $("edTolPct").value = (t.tolPct!=null) ? t.tolPct : 2;
   updateGateInputs();
   updateBuilderHint();
 }
 // Zeit-/Anzahl-Felder je nach gewähltem Modus aktivieren
 function updateGateInputs(){
-  $("edGateMeasureMin").disabled = $("edGateMeasure").value!=="timed";
+  const showMeasMin = $("edGateMeasure").value==="timed";
+  $("edGateMeasureMinWrap").style.display = showMeasMin ? "" : "none";
   const sm = $("edGateSolution").value;
-  $("edGateSolutionMin").disabled   = !(sm==="timed"||sm==="or"||sm==="and");
-  $("edGateSolutionCount").disabled = !(sm==="solved"||sm==="or"||sm==="and");
+  const showSolMin   = (sm==="timed"||sm==="or"||sm==="and");
+  const showSolCount = (sm==="solved"||sm==="or"||sm==="and");
+  $("edGateSolutionMinWrap").style.display   = showSolMin   ? "" : "none";
+  $("edGateSolutionCountWrap").style.display = showSolCount ? "" : "none";
 }
 function updateBuilderHint(){
   const type = $("edType").value;
@@ -2142,6 +2549,9 @@ function syncEditingFromForm(){
   t.gates = readGates();
   t.meterModes = {U:$("edModeU").checked, I:$("edModeI").checked, R:$("edModeR").checked};
   t.showFormulas = $("edShowFormulas").checked;
+  t.feedback = $("edFeedback").checked;
+  t.errorAnalysis = $("edErrorAnalysis").checked;
+  { const tp = parseDE($("edTolPct").value); t.tolPct = (isFinite(tp) && tp>=0) ? tp : 2; }
   t.type = detectType(t.circuit);   // Schaltungsart aus der Struktur ableiten
   // Dropdown + Hinweis an die erkannte Art anpassen (löst kein change-Event aus)
   if($("edType").value !== t.type){ $("edType").value = t.type; updateBuilderHint(); }
@@ -2230,7 +2640,7 @@ function exportOne(){
 }
 // Gesamte Erstellumgebung (alle Aufgaben) → .bkepenvironment
 function exportAll(){
-  const data = {format:"bkepenvironment", v:1, exported:new Date().toISOString(), tasks: STATE.tasks};
+  const data = {format:"bkepenvironment", v:1, exported:new Date().toISOString(), tasks: STATE.tasks, paths: STATE.paths};
   download("lernumgebung.bkepenvironment", JSON.stringify(data, null, 2));
 }
 // Aufgaben in die Liste aufnehmen (mit kollisionsfreien IDs)
@@ -2244,7 +2654,7 @@ function addTasks(tasks){
     }
   });
   if(!STATE.tasks.some(t=>t.id===STATE.currentId)) STATE.currentId = STATE.tasks[0] && STATE.tasks[0].id;
-  saveTasks(); refreshTaskSelect();
+  saveTasks(); refreshTaskSelect(); refreshPathSelect();
   return added;
 }
 function importFile(text){
@@ -2255,7 +2665,17 @@ function importFile(text){
     const replace = confirm("Lernumgebung laden:\n\nOK  = vorhandene Aufgaben ERSETZEN\nAbbrechen = HINZUFÜGEN (additiv)");
     if(replace) STATE.tasks = [];
     const n = addTasks(data.tasks);
+    if(Array.isArray(data.paths)){
+      if(replace) STATE.paths = data.paths.slice();
+      else data.paths.forEach(p=>{ const np=Object.assign({}, p); if(!np.id || STATE.paths.some(x=>x.id===np.id)) np.id=newId("path"); STATE.paths.push(np); });
+      savePaths(); refreshPathSelect();
+    }
     toast((replace?"Umgebung ersetzt: ":"hinzugefügt: ")+n+" Aufgabe(n)");
+    return;
+  }
+  // einzelner Lernpfad (.bkeppath) inkl. enthaltener Aufgaben
+  if(data && data.format==="bkeppath" && data.path){
+    addPathBundle(data);
     return;
   }
   // einzelne Aufgabe (.bkeptask) bzw. Altformate
@@ -2310,13 +2730,24 @@ function renderShareTaskPick(){
     lab.appendChild(cb); lab.appendChild(sp); box.appendChild(lab);
   });
 }
+// Verteil-Payload: entweder ein Lernpfad (mit Reihenfolge + Auto-Start) oder einzelne Aufgaben
+function sharePayload(){
+  const pid = $("sharePath") ? $("sharePath").value : "";
+  const p = pid ? pathById(pid) : null;
+  if(p){
+    const taskIds = p.taskIds.filter(id=>STATE.tasks.some(t=>t.id===id));
+    const tasks = taskIds.map(id=>cloneTask(STATE.tasks.find(t=>t.id===id)));
+    return {lock:true, v:1, tasks, paths:[{id:p.id, title:p.title, taskIds:taskIds.slice()}], autoPath:p.id};
+  }
+  return {lock:true, v:1, tasks:selectedShareTasks()};
+}
 function buildStudentLink(){
-  const payload = {lock:true, v:1, tasks:selectedShareTasks()};
+  const payload = sharePayload();
   const base = location.origin + location.pathname;
   return base + "#elw=" + b64enc(JSON.stringify(payload));
 }
 async function downloadStudentHTML(){
-  const payload = {lock:true, v:1, tasks:selectedShareTasks()};
+  const payload = sharePayload();
   let html;
   try{
     const resp = await fetch(location.href, {cache:"no-store"});
@@ -2330,6 +2761,144 @@ async function downloadStudentHTML(){
   download("elektro-lernwerkstatt-schueler.html", html, "text/html;charset=utf-8");
   toast("Schüler-HTML heruntergeladen");
 }
+/* ============================================================================
+   ARBEITSBLATT – Druck / PDF / Word (.doc)
+   ============================================================================ */
+function escHtml(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+// Gemeinsames CSS für Druck- und Word-Arbeitsblatt
+const WORKSHEET_CSS = `
+*{box-sizing:border-box}
+body{font-family:"Segoe UI",Arial,sans-serif;color:#111;margin:24px;font-size:13px;line-height:1.45}
+table.sheet-head{width:100%;border-collapse:collapse;margin:0 0 14px}
+table.sheet-head td{vertical-align:top;border:none;padding:0}
+table.sheet-head .logo-cell{text-align:right;width:170px}
+table.sheet-head .fields div{font-size:13px;margin:2px 0}
+.logo-box{display:inline-block;width:160px;height:66px;border:1px dashed #cbd5e1;border-radius:6px;color:#bbb;font-size:11px;text-align:center;line-height:66px}
+h1{font-size:20px;margin:0 0 2px}
+h2{font-size:14px;margin:16px 0 5px;border-bottom:1px solid #cbd5e1;padding-bottom:2px}
+.meta{color:#555;font-size:12px;margin-bottom:8px}
+.desc{margin:6px 0 12px;white-space:pre-wrap}
+.schem{text-align:center;margin:10px 0}
+.schem svg,.schem img{max-width:100%;height:auto}
+table.give{border-collapse:collapse;min-width:280px}
+table.give td{border:1px solid #cbd5e1;padding:4px 12px}
+table.give td:first-child{color:#333}
+.qs .q{margin:10px 0;font-size:14px}
+.ans{display:inline-block;min-width:170px;border-bottom:1.4px solid #111}
+.unit{color:#333}
+.foot{margin-top:28px;color:#555;font-size:11.5px;border-top:1px solid #cbd5e1;padding-top:6px}
+.pagebreak{page-break-before:always}
+.sol h3{font-size:15px;margin:0 0 6px}
+.sol .formula{font-family:"Cambria Math",Georgia,serif;margin:3px 0}
+.sol .res{font-weight:700}
+.sol .sol-step{margin:8px 0}
+.sol .sol-legend{color:#555;font-size:11.5px;margin-top:8px}
+.muted{color:#777}
+@media print{ body{margin:12mm} }
+`;
+
+// Schaltplan der Aufgabe als eigenständigen (selbst gestylten) SVG-String rendern
+function worksheetSvg(task){
+  const tmp = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  tmp.setAttribute("xmlns","http://www.w3.org/2000/svg");
+  tmp.style.cssText = "position:absolute;left:-99999px;top:0;width:700px";
+  document.body.appendChild(tmp);
+  try{
+    drawCircuit(tmp, task, {showValues:true, interactive:false});
+    const vb = (tmp.getAttribute("viewBox")||"0 0 600 360").split(/\s+/).map(Number);
+    const w = vb[2]||600, h = vb[3]||360;
+    const inner = tmp.innerHTML;
+    const style = `<style>
+      .wire{stroke:#0f172a;stroke-width:2.4;fill:none;stroke-linecap:round}
+      .sym-rect{fill:#fff;stroke:#0f172a;stroke-width:2.4}
+      .sym-fill{fill:#fff}
+      .sym-line{stroke:#0f172a;stroke-width:2.4;stroke-linecap:round}
+      .sym-dot{fill:#0f172a;stroke:none}
+      .estop-head{fill:#dc2626;stroke:#7f1d1d;stroke-width:1.2}
+      .lbl{fill:#0f172a;font:600 14px "Segoe UI",Arial,sans-serif}
+      .lbl-val{fill:#0369a1;font:500 12.5px "Segoe UI",Arial,sans-serif}
+      .lbl-small{fill:#475569;font:500 10px "Segoe UI",Arial,sans-serif}
+      .flow,.mpt,.mpt-hit,.cut-hit,.cut-gap,.cut-edge,.cut-term,.cut-term-hit,
+      .probe-red,.probe-black,.probe-lead,.probe-letter,.op-hit{display:none}
+    </style>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"><defs>${style}</defs><rect x="0" y="0" width="${w}" height="${h}" fill="#fff"/>${inner}</svg>`;
+  } finally {
+    document.body.removeChild(tmp);
+  }
+}
+
+// Gegeben-Zeilen für das Arbeitsblatt (analog zur Schüleransicht)
+function worksheetGiven(task){
+  const rows = [["Quellenspannung U", fmtStr(task.U,"V")]];
+  consumers(task.circuit).forEach(l=>{
+    if(l.showR===false) return;
+    const c = compOf(l);
+    rows.push([ c.letter==="R" ? l.label : l.label+" ("+c.name+")", fmtStr(l.R,"Ω") ]);
+  });
+  const ctrls = leaves(task.circuit).filter(l=>compOf(l).control);
+  if(ctrls.length) rows.push(["Schaltglieder", ctrls.map(l=>l.label+" ("+compOf(l).name+")").join(", ")]);
+  const ex = task.extras||{};
+  if(ex.t!=null)     rows.push(["Betriebsdauer t", deNum(ex.t)+" h"]);
+  if(ex.price!=null) rows.push(["Strompreis", deNum(ex.price)+" €/kWh"]);
+  if(ex.Pzu!=null)   rows.push(["zugeführte Leistung P<sub>zu</sub>", fmtStr(ex.Pzu,"W")]);
+  return rows;
+}
+
+// Inhalt des Arbeitsblatts (SVG-Markup wird je nach Ziel inline-SVG oder <img> übergeben)
+function worksheetBody(task, schemMarkup, withSolution){
+  const given = worksheetGiven(task).map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("");
+  const qs = buildQuestions(task);
+  const ql = qs.length
+    ? qs.map(q=>`<div class="q">${q.label} = <span class="ans">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> <span class="unit">${q.dispUnit||""}</span></div>`).join("")
+    : '<div class="muted">Für diese Aufgabe sind keine Rechengrößen festgelegt.</div>';
+  const sol = withSolution ? `<div class="pagebreak"></div><div class="sol">${buildSolutionHTML(task)}</div>` : "";
+  return `
+    <table class="sheet-head"><tr>
+      <td class="fields">
+        <div><b>Name:</b> _________________________________</div>
+        <div><b>Klasse:</b> ______________&nbsp;&nbsp;&nbsp;<b>Datum:</b> ______________</div>
+      </td>
+      <td class="logo-cell"><div class="logo-box">Logo</div></td>
+    </tr></table>
+    <h1>${escHtml(task.title||"Aufgabe")}</h1>
+    <div class="meta">${typeName(task.type)} · U = ${fmtStr(task.U,"V")}</div>
+    <div class="desc">${escHtml(task.description||"")}</div>
+    <div class="schem">${schemMarkup}</div>
+    <h2>Gegeben</h2>
+    <table class="give">${given}</table>
+    <h2>Gesucht – trage deine berechneten Werte ein</h2>
+    <div class="qs">${ql}</div>
+    ${sol}
+    <div class="foot">Elektro-Lernwerkstatt</div>
+  `;
+}
+
+// Drucken / PDF: in neuem Fenster öffnen und Druckdialog auslösen
+function printWorksheet(task, withSolution){
+  if(!task){ toast("Keine Aufgabe ausgewählt"); return; }
+  const body = worksheetBody(task, worksheetSvg(task), withSolution);
+  const w = window.open("","_blank");
+  if(!w){ toast("Pop-up blockiert – bitte erlauben"); return; }
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>${escHtml(task.title||"Arbeitsblatt")}</title><style>${WORKSHEET_CSS}</style></head><body>${body}<script>onload=function(){setTimeout(function(){print()},200)}<\/script></body></html>`);
+  w.document.close();
+}
+
+// Word (.doc): Schaltplan als PNG rastern und Word-kompatibles HTML herunterladen
+function wordWorksheet(task, withSolution){
+  if(!task){ toast("Keine Aufgabe ausgewählt"); return; }
+  rasterizeSVG(worksheetSvg(task), 2, (dataURL)=>{
+    const img = `<img src="${dataURL}" alt="Schaltplan"/>`;
+    const body = worksheetBody(task, img, withSolution);
+    const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>`+
+      `<head><meta charset="utf-8"><title>${escHtml(task.title||"Arbeitsblatt")}</title>`+
+      `<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->`+
+      `<style>${WORKSHEET_CSS}</style></head><body>${body}</body></html>`;
+    download(safeName(task.title||"arbeitsblatt")+".doc", "﻿"+html, "application/msword");
+    toast("Word-Arbeitsblatt gespeichert");
+  });
+}
+
 // Schüler-Link erzeugen + ins Textfeld schreiben (gemeinsame Basis für alle Methoden)
 function makeAndShowLink(){
   commitEditing();
@@ -2444,7 +3013,7 @@ function switchView(mode){
   $("studentView").classList.toggle("hidden", mode!=="student");
   $("teacherView").classList.toggle("hidden", mode!=="teacher");
   if(mode==="student"){ renderStudent(); }
-  else { stopGateTimer(); openEditor(curTask()); }
+  else { stopGateTimer(); openEditor(curTask()); refreshPathSelect(); }
 }
 
 function init(){
@@ -2453,8 +3022,10 @@ function init(){
   if(cfg && Array.isArray(cfg.tasks) && cfg.tasks.length){
     STATE.tasks = cfg.tasks;
     STATE.tasks.forEach(t=>{ if(!t.id) t.id=newId("task"); reIdCircuit(t.circuit); });
+    STATE.paths = Array.isArray(cfg.paths) ? cfg.paths : [];
   } else {
     STATE.tasks = loadTasks();
+    STATE.paths = loadPaths();
   }
   if(cfg && cfg.lock) applyLock();
 
@@ -2462,7 +3033,9 @@ function init(){
 
   STATE.currentId = STATE.tasks[0] && STATE.tasks[0].id;
   refreshTaskSelect();
+  refreshPathSelect();
   renderStudent();
+  if(cfg && cfg.autoPath) startPath(cfg.autoPath);   // verteilten Lernpfad direkt starten
 
   // Hell/Dunkel
   $("btnTheme").addEventListener("click", ()=>{
@@ -2502,6 +3075,7 @@ function init(){
   $("btnReset").addEventListener("click", ()=>{
     document.querySelectorAll('#questionList input').forEach(i=>i.value="");
     document.querySelectorAll('.q-status').forEach(s=>{s.textContent="";s.className="q-status";});
+    document.querySelectorAll('.q-fb').forEach(s=>{s.textContent="";s.removeAttribute("style");});
     document.querySelectorAll('.q-sol').forEach(s=>{s.textContent="";s.className="q-sol";});
     $("resultBanner").className="result-banner"; $("solutionBox").className="solution";
   });
@@ -2523,7 +3097,8 @@ function init(){
   ["edGateMeasure","edGateSolution"].forEach(id=>{
     $(id).addEventListener("change", ()=>{ updateGateInputs(); updatePreview(); });
   });
-  ["edModeU","edModeI","edModeR","edShowFormulas"].forEach(id=>{ $(id).addEventListener("change", updatePreview); });
+  ["edModeU","edModeI","edModeR","edShowFormulas","edFeedback","edErrorAnalysis"].forEach(id=>{ $(id).addEventListener("change", updatePreview); });
+  $("edTolPct").addEventListener("change", updatePreview);
   $("solveCheckMeasure").addEventListener("change", renderSolvability);
   $("prevSolution").addEventListener("click", ()=>{
     const box=$("prevSolutionBox");
@@ -2561,8 +3136,10 @@ function init(){
   $("edDelete").addEventListener("click", ()=>{
     if(STATE.tasks.length<=1){ toast("Mindestens eine Aufgabe muss bleiben"); return; }
     if(!confirm("Diese Aufgabe wirklich löschen?")) return;
-    STATE.tasks = STATE.tasks.filter(t=>t.id!==STATE.editing.id);
-    STATE.currentId = STATE.tasks[0].id; saveTasks(); refreshTaskSelect(); openEditor(curTask());
+    const delId = STATE.editing.id;
+    STATE.tasks = STATE.tasks.filter(t=>t.id!==delId);
+    purgeTaskFromPaths(delId);
+    STATE.currentId = STATE.tasks[0].id; saveTasks(); refreshTaskSelect(); refreshPathSelect(); openEditor(curTask());
     toast("Aufgabe gelöscht");
   });
   $("edExport").addEventListener("click", exportAll);
@@ -2592,6 +3169,31 @@ function init(){
   $("qrPng").addEventListener("click", qrToPng);
   $("qrSvg").addEventListener("click", ()=>{ if(STATE._qrSvg){ downloadBlob("schueler-qr.svg", new Blob([STATE._qrSvg],{type:"image/svg+xml"})); toast("QR als SVG gespeichert"); } });
   $("qrPrint").addEventListener("click", qrPrintWindow);
+  $("wsPrint").addEventListener("click", ()=>{ if(!STATE.editing) return; syncEditingFromForm(); printWorksheet(STATE.editing, $("wsSolution").checked); });
+  $("wsWord").addEventListener("click", ()=>{ if(!STATE.editing) return; syncEditingFromForm(); wordWorksheet(STATE.editing, $("wsSolution").checked); });
+  $("sharePath").addEventListener("change", ()=>{
+    if($("sharePath").value==="__edit__") refreshPathSelect();  // Editor füllen (ruft applySharePathUI)
+    else applySharePathUI();
+  });
+
+  // Lernpfad-Editor
+  $("pathSelect").addEventListener("change", ()=>{ STATE.pathEditId=$("pathSelect").value||null; renderPathEditor(); });
+  $("pathNew").addEventListener("click", pathNew);
+  $("pathDelete").addEventListener("click", pathDelete);
+  $("pathAdd").addEventListener("click", pathAddTask);
+  $("pathTitle").addEventListener("input", ()=>{
+    const p=curPath(); if(!p) return; p.title=$("pathTitle").value; savePaths();
+    const o=[...$("pathSelect").options].find(o=>o.value===p.id); if(o) o.textContent=p.title||"(ohne Titel)";
+    refreshSharePathSelect();
+  });
+  $("pathStart").addEventListener("click", ()=>{ const p=curPath(); if(!p){ toast("Erst einen Pfad anlegen"); return; } startPath(p.id); });
+  $("pathExport").addEventListener("click", exportPath);
+  $("pathImport").addEventListener("click", ()=>$("pathImportFile").click());
+  $("pathImportFile").addEventListener("change", e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const rd=new FileReader(); rd.onload=()=>{ importFile(rd.result); }; rd.readAsText(f);
+    e.target.value="";
+  });
 }
 // Lehrkraftmodus ausblenden (Schülerversion) – Elemente bleiben erhalten (Handler funktionieren)
 function applyLock(){
