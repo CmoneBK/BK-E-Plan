@@ -97,6 +97,15 @@
   .path-bar .pb-dot.cur.done{color:#04240f}
   .path-bar .pb-btns{display:flex; gap:6px}
 
+  /* Experimentier-Builder */
+  .exp-bar{grid-column:1/-1; background:var(--panel); border:1px solid var(--accent); border-radius:12px; padding:10px 14px}
+  .exp-bar.hidden{display:none}
+  .exp-bar .exp-head{font-size:13.5px; margin-bottom:8px}
+  .exp-bar .exp-controls{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .exp-bar .exp-comps{display:flex; flex-direction:column; gap:5px; margin-top:8px}
+  .exp-comp{display:flex; align-items:center; gap:8px; background:var(--field); border:1px solid var(--line); border-radius:8px; padding:5px 8px; flex-wrap:wrap}
+  .exp-comp .ec-lbl{font-weight:700; color:var(--accent2); width:30px}
+
   /* Lernpfad-Editor (Lehrkraft) */
   .path-list{display:flex; flex-direction:column; gap:5px}
   .path-item{display:flex; align-items:center; gap:8px; background:var(--field); border:1px solid var(--line); border-radius:8px; padding:5px 8px}
@@ -362,8 +371,10 @@
     <select id="taskSelect" style="min-width:230px"></select>
   </div>
   <button class="btn" id="btnTheme" title="Hell/Dunkel umschalten">🌙</button>
+  <button class="btn" id="btnTeacherUnlock" style="display:none" title="Lehrermodus mit Passwort entsperren">🔒 Lehrkraft</button>
   <div class="modeswitch">
     <button id="btnStudent" class="active">👩‍🎓 Schüler</button>
+    <button id="btnExperiment" style="display:none">🧪 Experimentieren</button>
     <button id="btnTeacher">👨‍🏫 Lehrkraft</button>
   </div>
 </header>
@@ -372,6 +383,21 @@
 <main id="studentView">
   <!-- Lernpfad-Fortschrittsleiste (nur sichtbar, wenn ein Pfad aktiv ist) -->
   <div id="pathBar" class="path-bar hidden"></div>
+  <!-- Experimentier-Builder (nur im Experimentier-Modus sichtbar) -->
+  <div id="expBar" class="exp-bar hidden">
+    <div class="exp-head">🧪 <b>Experimentieren</b> — baue eine Schaltung & sage die Werte voraus</div>
+    <div class="exp-controls">
+      <label>Schaltung:
+        <select id="expType"><option value="reihe">Reihe</option><option value="parallel">Parallel</option></select>
+      </label>
+      <label>U: <input type="number" id="expU" step="any" style="width:80px"> V</label>
+      <button class="btn small" id="expAdd">＋ Bauteil</button>
+      <button class="btn small" id="expRandAll">🎲 Werte würfeln</button>
+      <button class="btn small ghost" id="expReset">↺ Neu</button>
+      <button class="btn small" id="expSaveTask" style="display:none">💾 Als Aufgabe übernehmen</button>
+    </div>
+    <div id="expComps" class="exp-comps"></div>
+  </div>
   <!-- linke Spalte: Schaltplan + Messgerät -->
   <section class="card">
     <h2>🔧 Schaltplan <span class="tag" id="circTypeTag"></span></h2>
@@ -634,7 +660,24 @@
         <button class="btn small" id="qrPrint">QR drucken</button>
       </div>
     </div>
+    <label class="leaf-showr" style="font-size:12.5px; margin-top:8px">
+      <input type="checkbox" id="shareSandbox" checked> 🧪 Experimentieren-Modus für Schüler erlauben (eigene Schaltungen bauen & Werte vorhersagen)</label>
+    <label class="leaf-showr" style="font-size:12.5px; margin-top:4px; margin-left:24px">
+      <input type="checkbox" id="shareSandboxSolution"> … inkl. Musterlösung/Rechenweg im Experimentieren (sonst nur Prüfen &amp; Messen – verhindert „Nachbauen &amp; Ablesen")</label>
+    <label class="leaf-showr" style="font-size:12.5px; margin-top:4px; margin-left:24px">
+      <input type="checkbox" id="shareSandboxMeasure" checked> … Messen mit dem Multimeter im Experimentieren erlauben</label>
+    <label class="leaf-showr" style="font-size:12.5px; margin-top:4px; margin-left:24px">
+      <input type="checkbox" id="shareSandboxFormulas"> … Formeln bei den gesuchten Werten im Experimentieren anzeigen</label>
     <div class="muted" style="font-size:11.5px; margin-top:6px">Beim Öffnen über Link / QR / Datei ist der Lehrkraftmodus ausgeblendet; die Schüler sehen nur die ausgewählten Aufgaben. Link/QR am besten auf der veröffentlichten Seite (GitHub Pages) erzeugen.</div>
+
+    <hr class="hr">
+    <div style="font-weight:700; margin-bottom:4px">🔐 Lehrermodus per Passwort schützen</div>
+    <div class="muted" style="font-size:12.5px; margin-bottom:6px">Schützt die <b>veröffentlichte Seite</b> gegen URL-Manipulation: Lehrkraft &amp; volles Experimentieren erscheinen nur nach Passworteingabe. Lege ein Passwort fest und lade die geschützte <code>index.html</code> herunter – diese als GitHub-Pages-Seite veröffentlichen.</div>
+    <div class="row-inline">
+      <input type="password" id="gatePass" placeholder="Lehrer-Passwort" style="min-width:180px" autocomplete="new-password">
+      <button class="btn small" id="btnExportProtected">💾 Geschützte index.html speichern</button>
+    </div>
+    <div class="muted" style="font-size:11.5px; margin-top:6px">Hinweis: Wirksam gegen normales URL-Ändern/Direktaufruf. Kein vollständiger Schutz gegen Profis mit Entwicklertools – echte Prüfungssicherheit braucht einen Server.</div>
   </section>
 
 </main>
@@ -1532,9 +1575,112 @@ const STATE = {
   paths: [],             // Lernpfade / Serien
   run: null,             // aktiver Pfad im Schülermodus: {pathId, idx, done:[ids]}
   pathEditId: null,      // im Lehrkraft-Editor bearbeiteter Pfad
+  experiment: false,     // Experimentier-Modus aktiv?
+  sandbox: null,         // Sandbox-Aufgabe (Experimentieren)
+  sandboxLeaves: [],     // Bauteil-Blätter der Sandbox
+  sandboxType: "reihe",  // Reihe/Parallel der Sandbox
+  sandboxAllowed: true,  // darf der Experimentier-Modus genutzt werden?
+  sandboxSolutionAllowed: false, // Musterlösung im Experimentieren verfügbar?
+  sandboxMeasureAllowed: true,   // Messen im Experimentieren verfügbar?
+  sandboxFormulasAllowed: false, // Formeln bei „Gesucht" im Experimentieren anzeigen?
+  gateActive: false,             // Lehrer-Passwortschutz aktiv?
+  teacherUnlocked: true,         // Lehrermodus entsperrt?
 };
 const $ = (id)=>document.getElementById(id);
-function curTask(){ return STATE.tasks.find(t=>t.id===STATE.currentId) || STATE.tasks[0]; }
+function curTask(){
+  if(STATE.experiment && STATE.sandbox) return STATE.sandbox;
+  return STATE.tasks.find(t=>t.id===STATE.currentId) || STATE.tasks[0];
+}
+
+/* ============================================================================
+   EXPERIMENTIEREN / SELBST-AUFGABEN-MODUS
+   - Schüler baut selbst eine Schaltung und sagt Werte voraus.
+   - Wiederverwendung der kompletten Schüleransicht (Schaltplan, Multimeter,
+     Pruefen, Musterloesung) ueber eine eigene Sandbox-Aufgabe.
+   ============================================================================ */
+const LS_SANDBOX = "elektro_lernwerkstatt_sandbox_v1";
+function defaultSandbox(){
+  STATE.sandboxType = "reihe";
+  STATE.sandboxLeaves = [R(100), R(220)];
+  STATE.sandbox = {
+    id:"__sandbox__", title:"🧪 Experimentieren",
+    description:"Baue oben eine Schaltung, stelle die Werte ein und sage rechts die gesuchten Größen voraus. Mit Antworten pruefen bekommst du Punkte und gezielte Hinweise, mit Musterloesung den Rechenweg - ausserdem kannst du messen und den Stromfluss animieren. Tipp: Verdopple z. B. einen Widerstand und sage voraus, wie sich der Strom aendert (Was-waere-wenn).",
+    U:12, type:"reihe", circuit:null, extras:{}, ask:{}, askR:{},
+    meterModes:{U:true,I:true,R:true},
+    gates:{measure:{mode: STATE.sandboxMeasureAllowed?"always":"off", minutes:0},
+           solution:{mode: STATE.sandboxSolutionAllowed?"always":"off", minutes:0}},
+    feedback:true, errorAnalysis:true, showFormulas: STATE.sandboxFormulasAllowed, tolPct:5
+  };
+  sandboxRebuild();
+}
+// Freigaben der Sandbox an die aktuellen Berechtigungen anpassen
+function applySandboxGates(){
+  if(!STATE.sandbox) return;
+  STATE.sandbox.gates.solution.mode = STATE.sandboxSolutionAllowed ? "always" : "off";
+  STATE.sandbox.gates.measure.mode  = STATE.sandboxMeasureAllowed  ? "always" : "off";
+  STATE.sandbox.showFormulas = STATE.sandboxFormulasAllowed;
+}
+function saveSandbox(){
+  try{ localStorage.setItem(LS_SANDBOX, JSON.stringify({
+    U:STATE.sandbox.U, type:STATE.sandboxType,
+    comps:STATE.sandboxLeaves.map(l=>({comp:l.comp, R:l.R}))
+  })); }catch(e){}
+}
+function loadSandbox(){
+  defaultSandbox();
+  try{
+    const raw=localStorage.getItem(LS_SANDBOX);
+    if(raw){ const d=JSON.parse(raw);
+      if(d && Array.isArray(d.comps) && d.comps.length){
+        STATE.sandboxType = d.type==="parallel" ? "parallel" : "reihe";
+        STATE.sandbox.U = isFinite(d.U) ? d.U : 12;
+        STATE.sandboxLeaves = d.comps.map(c=>R(isFinite(c.R)?c.R:100, c.comp));
+        sandboxRebuild();
+      }
+    }
+  }catch(e){}
+}
+// Schaltung + gefragte Größen aus den aktuellen Bauteilen neu aufbauen
+function sandboxRebuild(){
+  const lv = STATE.sandboxLeaves;
+  if(!lv.length){ lv.push(R(100)); }
+  STATE.sandbox.circuit = lv.length<=1 ? lv[0]
+    : (STATE.sandboxType==="parallel" ? parallel(lv) : series(lv));
+  relabel(STATE.sandbox.circuit);
+  STATE.sandbox.type = lv.length<=1 ? "grund" : (STATE.sandboxType==="parallel" ? "parallel" : "reihe");
+  // im Sandkasten sind alle Größen bekannt → alle vorhersagbar
+  STATE.sandbox.ask = {Rges:true, Iges:true, Pges:true};
+  STATE.sandbox.askR = {};
+  consumers(STATE.sandbox.circuit).forEach(l=>{ STATE.sandbox.askR[l.id] = {U:true, I:true, P:true}; });
+  saveSandbox();
+}
+// Änderung übernehmen: Schaltung neu bauen + Schüleransicht neu rendern
+function sandboxApply(rebuildBuilder){
+  sandboxRebuild();
+  renderStudent();
+  if(rebuildBuilder!==false) renderExpBuilder();
+}
+function renderExpBuilder(){
+  const wrap=$("expComps"); if(!wrap) return;
+  $("expType").value = STATE.sandboxType;
+  $("expU").value = STATE.sandbox.U;
+  const consumerKeys = Object.keys(COMPONENTS).filter(k=>!COMPONENTS[k].control);
+  wrap.innerHTML="";
+  STATE.sandboxLeaves.forEach((leaf,i)=>{
+    const row=document.createElement("div"); row.className="exp-comp";
+    const opts=consumerKeys.map(k=>`<option value="${k}"${leaf.comp===k?" selected":""}>${COMPONENTS[k].name}</option>`).join("");
+    row.innerHTML=`<span class="ec-lbl">${leaf.label||("R"+(i+1))}</span>
+      <select class="ec-comp">${opts}</select>
+      <input type="number" class="ec-r" step="any" value="${leaf.R}" style="width:90px"> <span class="muted">Ω</span>
+      <button class="btn small ec-rand" title="Zufallswert">🎲</button>
+      <button class="btn small danger ec-del" title="Entfernen"${STATE.sandboxLeaves.length<=1?" disabled":""}>✕</button>`;
+    row.querySelector(".ec-comp").addEventListener("change", e=>{ leaf.comp=e.target.value; sandboxApply(); });
+    row.querySelector(".ec-r").addEventListener("change", e=>{ const v=parseDE(e.target.value); if(isFinite(v)&&v>=0) leaf.R=v; sandboxApply(); });
+    row.querySelector(".ec-rand").addEventListener("click", ()=>{ leaf.R=randomR(true); sandboxApply(); });
+    row.querySelector(".ec-del").addEventListener("click", ()=>{ if(STATE.sandboxLeaves.length<=1) return; STATE.sandboxLeaves.splice(i,1); sandboxApply(); });
+    wrap.appendChild(row);
+  });
+}
 
 /* ============================================================================
    LERNPFADE / SERIEN  —  Bündeln mehrerer Aufgaben zu einer Sequenz
@@ -1752,8 +1898,9 @@ function applyMeterModes(){
 }
 function renderStudent(){
   const task = curTask(); if(!task) return;
-  STATE.currentId = task.id;
-  renderPathBar();                 // Lernpfad-Leiste (zeigt/versteckt sich selbst)
+  if(!STATE.experiment) STATE.currentId = task.id;
+  if(STATE.experiment){ $("pathBar").classList.add("hidden"); $("taskSelectWrap").classList.add("hidden"); }
+  else renderPathBar();            // Lernpfad-Leiste (zeigt/versteckt sich selbst)
   $("taskTitle").textContent = task.title;
   $("taskDescription").textContent = task.description;
   $("circTypeTag").textContent = typeName(task.type) + " · U = "+fmtStr(task.U,"V");
@@ -2003,7 +2150,7 @@ function checkAnswers(){
   STATE.solvedMax = Math.max(STATE.solvedMax||0, correct);
   updateGates();
   if(!prevAllow && STATE.allow.solution) toast("Musterlösung freigeschaltet 🎉");
-  if(STATE.run && qs.length && correct===qs.length) pathMarkDone();   // Lernpfad: Aufgabe erledigt
+  if(!STATE.experiment && STATE.run && qs.length && correct===qs.length) pathMarkDone();   // Lernpfad: Aufgabe erledigt
   const banner = $("resultBanner");
   if(answered===0){ banner.className="result-banner show partial"; banner.textContent="Bitte zuerst Werte eintragen."; return; }
   if(fb){
@@ -2802,14 +2949,18 @@ function renderShareTaskPick(){
 }
 // Verteil-Payload: entweder ein Lernpfad (mit Reihenfolge + Auto-Start) oder einzelne Aufgaben
 function sharePayload(){
+  const sandbox = !!($("shareSandbox") && $("shareSandbox").checked);
+  const sandboxSolution = sandbox && !!($("shareSandboxSolution") && $("shareSandboxSolution").checked);
+  const sandboxMeasure = sandbox && !!($("shareSandboxMeasure") && $("shareSandboxMeasure").checked);
+  const sandboxFormulas = sandbox && !!($("shareSandboxFormulas") && $("shareSandboxFormulas").checked);
   const pid = $("sharePath") ? $("sharePath").value : "";
-  const p = pid ? pathById(pid) : null;
+  const p = (pid && pid!=="__edit__") ? pathById(pid) : null;
   if(p){
     const taskIds = p.taskIds.filter(id=>STATE.tasks.some(t=>t.id===id));
     const tasks = taskIds.map(id=>cloneTask(STATE.tasks.find(t=>t.id===id)));
-    return {lock:true, v:1, tasks, paths:[{id:p.id, title:p.title, taskIds:taskIds.slice()}], autoPath:p.id};
+    return {lock:true, v:1, tasks, paths:[{id:p.id, title:p.title, taskIds:taskIds.slice()}], autoPath:p.id, sandbox, sandboxSolution, sandboxMeasure, sandboxFormulas};
   }
-  return {lock:true, v:1, tasks:selectedShareTasks()};
+  return {lock:true, v:1, tasks:selectedShareTasks(), sandbox, sandboxSolution, sandboxMeasure, sandboxFormulas};
 }
 function buildStudentLink(){
   const payload = sharePayload();
@@ -3074,16 +3225,71 @@ function applyTheme(mode){
 }
 let viewMode = "student";
 function switchView(mode){
-  if(STATE.locked && mode==="teacher") return;   // Schülerversion: kein Lehrkraftmodus
+  if(STATE.locked && mode==="teacher") return;            // Schülerversion: kein Lehrkraftmodus
+  if(mode==="teacher" && STATE.gateActive && !STATE.teacherUnlocked){ promptTeacherUnlock(); return; }  // Passwortschutz
+  if(mode==="experiment" && !STATE.sandboxAllowed) return; // Experimentieren ggf. gesperrt
   // Beim Verlassen des Lehrkraftmodus: Editor-Änderungen automatisch übernehmen
-  if(mode==="student" && viewMode==="teacher") commitEditing();
+  if(viewMode==="teacher" && mode!=="teacher") commitEditing();
   viewMode = mode;
+  STATE.experiment = (mode==="experiment");
   $("btnStudent").classList.toggle("active", mode==="student");
   $("btnTeacher").classList.toggle("active", mode==="teacher");
-  $("studentView").classList.toggle("hidden", mode!=="student");
+  const be=$("btnExperiment"); if(be) be.classList.toggle("active", mode==="experiment");
   $("teacherView").classList.toggle("hidden", mode!=="teacher");
-  if(mode==="student"){ renderStudent(); }
-  else { stopGateTimer(); openEditor(curTask()); refreshPathSelect(); }
+  $("studentView").classList.toggle("hidden", mode==="teacher");   // Schüleransicht dient Schüler- UND Experimentier-Modus
+  $("expBar").classList.toggle("hidden", mode!=="experiment");
+  if(mode==="teacher"){ stopGateTimer(); openEditor(curTask()); refreshPathSelect(); }
+  else { if(mode==="experiment") renderExpBuilder(); renderStudent(); }
+}
+
+/* ============================================================================
+   LEHRER-PASSWORTSCHUTZ (gegen URL-Manipulation auf der veröffentlichten Seite)
+   ============================================================================ */
+function teacherGate(){ return (window.__ELW_GATE__ && window.__ELW_GATE__.hash) ? window.__ELW_GATE__ : null; }
+async function sha256Hex(str){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+function randSalt(){ const a=new Uint8Array(8); crypto.getRandomValues(a); return [...a].map(b=>b.toString(16).padStart(2,"0")).join(""); }
+// Sichtbarkeit von Lehrkraft-/Entsperr-/Experimentier-Button an den aktuellen Zustand anpassen
+function applyTeacherGateUI(){
+  const hideTeacher = STATE.locked || (STATE.gateActive && !STATE.teacherUnlocked);
+  const tb=$("btnTeacher"); if(tb) tb.style.display = hideTeacher ? "none" : "";
+  const ub=$("btnTeacherUnlock"); if(ub) ub.style.display = (!STATE.locked && STATE.gateActive && !STATE.teacherUnlocked) ? "" : "none";
+  const be=$("btnExperiment"); if(be) be.style.display = STATE.sandboxAllowed ? "" : "none";
+}
+// Entsperren per Passwort
+async function promptTeacherUnlock(){
+  const gate = teacherGate(); if(!gate) return;
+  if(!(crypto && crypto.subtle)){ toast("Passwortschutz benötigt HTTPS (z. B. GitHub Pages)"); return; }
+  const pw = prompt("Lehrer-Passwort eingeben:"); if(pw==null) return;
+  const h = await sha256Hex((gate.salt||"")+pw);
+  if(h===gate.hash){
+    try{ sessionStorage.setItem("elw_teacher_ok","1"); }catch(e){}
+    STATE.teacherUnlocked = true;
+    STATE.sandboxAllowed=true; STATE.sandboxSolutionAllowed=true; STATE.sandboxMeasureAllowed=true;
+    applySandboxGates();
+    $("expSaveTask").style.display = "";
+    applyTeacherGateUI();
+    switchView("teacher");
+    toast("Lehrermodus entsperrt");
+  } else { toast("Falsches Passwort"); }
+}
+// Geschützte index.html (mit eingebettetem Passwort-Hash) zum Veröffentlichen erzeugen
+async function exportProtectedIndex(){
+  const pw = $("gatePass").value || "";
+  if(pw.length<3){ toast("Bitte ein Passwort (min. 3 Zeichen) eingeben"); return; }
+  if(!(crypto && crypto.subtle)){ toast("Passwortschutz benötigt HTTPS (z. B. GitHub Pages)"); return; }
+  const salt = randSalt();
+  const hash = await sha256Hex(salt+pw);
+  let html;
+  try{ const r=await fetch(location.href,{cache:"no-store"}); html=await r.text(); }
+  catch(e){ html="<!DOCTYPE html>\n"+document.documentElement.outerHTML; }
+  const inject = '<script>window.__ELW_GATE__='+JSON.stringify({salt,hash}).replace(/<\//g,"<\\/")+';<\/script>';
+  if(html.includes("</head>")) html=html.replace("</head>", inject+"\n</head>"); else html=inject+"\n"+html;
+  download("index.html", html, "text/html;charset=utf-8");
+  $("gatePass").value="";
+  toast("Geschützte index.html gespeichert – als GitHub-Pages-Seite veröffentlichen");
 }
 
 function init(){
@@ -3097,7 +3303,28 @@ function init(){
     STATE.tasks = loadTasks();
     STATE.paths = loadPaths();
   }
-  if(cfg && cfg.lock) applyLock();
+  if(cfg && cfg.lock) applyLock();   // Schüler-Link: harte Sperre (kein Lehrermodus)
+
+  // Lehrer-Passwortschutz der veröffentlichten Basis-Seite
+  const gate = teacherGate();
+  STATE.gateActive = !!gate;
+  STATE.teacherUnlocked = !STATE.gateActive || (function(){ try{ return sessionStorage.getItem("elw_teacher_ok")==="1"; }catch(e){ return false; } })();
+  const gatedStudent = STATE.gateActive && !STATE.teacherUnlocked && !STATE.locked;
+
+  // Experimentier-Berechtigungen
+  if(STATE.locked){                          // via Schüler-Link: nur, wenn von der Lehrkraft aktiviert
+    STATE.sandboxAllowed         = !!cfg.sandbox;
+    STATE.sandboxSolutionAllowed = !!cfg.sandboxSolution;
+    STATE.sandboxMeasureAllowed  = !!cfg.sandboxMeasure;
+    STATE.sandboxFormulasAllowed = !!cfg.sandboxFormulas;
+  } else if(STATE.gateActive && STATE.teacherUnlocked){   // entsperrte Lehrkraft: voller Zugriff
+    STATE.sandboxAllowed=true; STATE.sandboxSolutionAllowed=true; STATE.sandboxMeasureAllowed=true; STATE.sandboxFormulasAllowed=false;
+  } else {                                    // öffentliche, nicht entsperrte Version → Experimentieren komplett aus
+    STATE.sandboxAllowed=false; STATE.sandboxSolutionAllowed=false; STATE.sandboxMeasureAllowed=false; STATE.sandboxFormulasAllowed=false;
+  }
+  loadSandbox();
+  $("expSaveTask").style.display = (STATE.locked || gatedStudent) ? "none" : "";
+  applyTeacherGateUI();
 
   applyTheme(localStorage.getItem("elw_theme")||"dark");
 
@@ -3115,6 +3342,38 @@ function init(){
   // Modus-Umschalter
   $("btnStudent").addEventListener("click", ()=>switchView("student"));
   $("btnTeacher").addEventListener("click", ()=>switchView("teacher"));
+  $("btnExperiment").addEventListener("click", ()=>switchView("experiment"));
+  $("btnTeacherUnlock").addEventListener("click", promptTeacherUnlock);
+  $("btnExportProtected").addEventListener("click", exportProtectedIndex);
+
+  // Experimentier-Builder
+  $("expType").addEventListener("change", ()=>{ STATE.sandboxType=$("expType").value; sandboxApply(); });
+  $("expU").addEventListener("change", ()=>{ const v=parseDE($("expU").value); if(isFinite(v)&&v>=0) STATE.sandbox.U=v; sandboxApply(); });
+  $("expAdd").addEventListener("click", ()=>{ STATE.sandboxLeaves.push(R(100)); sandboxApply(); });
+  $("expRandAll").addEventListener("click", ()=>{ STATE.sandboxLeaves.forEach(l=>l.R=randomR(true)); sandboxApply(); toast("Zufallswerte gewürfelt"); });
+  $("expReset").addEventListener("click", ()=>{ if(!confirm("Sandkasten zurücksetzen?")) return; defaultSandbox(); sandboxApply(); });
+  // Bereitstellen: Musterlösungs-Option nur wählbar, wenn Experimentieren erlaubt ist
+  const applySandboxShareUI = ()=>{
+    const on = $("shareSandbox").checked;
+    ["shareSandboxSolution","shareSandboxMeasure","shareSandboxFormulas"].forEach(id=>{
+      const cb=$(id); cb.disabled=!on; cb.parentElement.style.opacity = on ? "" : "0.5";
+    });
+  };
+  $("shareSandbox").addEventListener("change", applySandboxShareUI);
+  applySandboxShareUI();
+  // Formel-Schalter wirkt sofort (Vorschau) auf das Experimentieren
+  $("shareSandboxFormulas").addEventListener("change", ()=>{
+    STATE.sandboxFormulasAllowed = $("shareSandboxFormulas").checked;
+    applySandboxGates();
+    if(STATE.experiment) renderStudent();
+  });
+  $("expSaveTask").addEventListener("click", ()=>{
+    const t = cloneTask(STATE.sandbox);
+    t.id = newId("task"); t.title = "Aus Experiment: "+typeName(t.type)+" (U="+deNum(t.U)+" V)";
+    reIdCircuit(t.circuit);
+    STATE.tasks.push(t); STATE.currentId=t.id; saveTasks(); refreshTaskSelect(); refreshPathSelect();
+    toast("Als Aufgabe übernommen – im Lehrkraftmodus bearbeitbar");
+  });
 
   // Aufgabenauswahl
   $("taskSelect").addEventListener("change", e=>{
