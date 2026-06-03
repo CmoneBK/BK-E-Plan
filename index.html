@@ -279,6 +279,76 @@
          border:1px solid var(--accent); color:var(--text); padding:10px 18px; border-radius:10px;
          opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; z-index:50}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px)}
+
+  /* ============================================================
+     TOUCH / TABLET / SMARTPHONE
+     ============================================================ */
+  /* Touch-Geräte (kein Hover): Trefferflächen größer & dauerhaft sichtbar */
+  @media (pointer:coarse){
+    /* Seite über dem Schaltplan scrollbar halten; Tippen platziert weiterhin Messpunkte */
+    svg#schematic{touch-action:manipulation}
+    /* komfortable Mindestgröße für alle Tap-Ziele */
+    .btn{padding:10px 14px; font-size:14px; min-height:42px}
+    .btn.small{padding:8px 11px; font-size:13px; min-height:38px}
+    .modeswitch button{padding:11px 18px}
+    .meter-modes button, .probe-pick button{padding:11px 6px; font-size:13px; min-height:44px}
+    select,input[type=text],input[type=number],textarea{font-size:16px; padding:10px 11px}  /* >=16px = kein iOS-Auto-Zoom */
+    .q-input input{font-size:16px}
+    .q-rev{min-height:40px; padding:8px 11px}
+    .path-bar .pb-dot{width:34px; height:34px; font-size:14px}
+    .path-item .pi-btns .btn{min-width:40px}
+
+    /* Messpunkte: ohne Hover dauerhaft andeuten + größere Trefferfläche */
+    svg.mm-U .mpt-hit, svg.mm-R .mpt-hit{fill:var(--accent2); fill-opacity:.16; r:16}
+    svg.mm-U .mpt, svg.mm-R .mpt{r:6}
+    .mpt-hit:active{fill-opacity:.4}
+    /* Auftrennbare Leitungen (A-Modus): dauerhaft schwach sichtbar + breiter */
+    svg.mm-A .cut-hit{stroke:var(--warn); stroke-opacity:.18; stroke-width:20}
+    svg.mm-A .cut-hit:active{stroke-opacity:.45}
+    .cut-term-hit{r:16}
+    .cut-term-hit:active{fill:var(--warn); fill-opacity:.4}
+    /* Schalter/Bauteile beim Antippen sichtbar quittieren */
+    .op-hit:active{fill:var(--accent); fill-opacity:.2}
+    .res-hit:active .sym-rect{stroke:var(--accent)}
+  }
+
+  /* Tablet hochkant / kleinere Fenster */
+  @media (max-width:820px){
+    header{gap:8px; padding:8px 12px}
+    header h1{font-size:16px}
+    header .sub{display:none}                 /* Untertitel spart Platz */
+    #taskSelectWrap select{min-width:150px}
+    main{padding:10px; gap:10px}
+    .card{padding:12px; border-radius:12px}
+    .ed-row{grid-template-columns:1fr}        /* Label über Eingabe */
+    .ed-row > label{padding-top:0; font-weight:600}
+  }
+
+  /* Smartphone */
+  @media (max-width:560px){
+    body{font-size:15px}
+    header{flex-wrap:wrap}
+    header .spacer{display:none}
+    header h1{flex:1 1 100%}
+    #taskSelectWrap{flex:1 1 100%}
+    #taskSelectWrap select{flex:1; min-width:0; width:100%}
+    .modeswitch{flex:1 1 100%}
+    .modeswitch button{flex:1}
+    #btnTheme{order:2}
+    .meter{flex-direction:column}
+    .meter-body{min-width:0; width:100%}
+    .meter-display{font-size:22px}
+    .q-row{grid-template-columns:1fr}          /* Frage über Eingabefeld */
+    .q-input{justify-content:flex-start}
+    .q-input input{flex:1; width:auto; min-width:0}
+    .given-table td,.q-table td,.q-table th{font-size:14px; padding:7px 6px}
+    .path-bar{gap:8px}
+    .path-bar .pb-count{flex:1 1 100%; order:3}
+    .path-bar .pb-steps{order:4}
+    .path-bar .pb-btns{order:5; flex:1 1 100%; }
+    .path-bar .pb-btns .btn{flex:1}
+    .formula{font-size:15px}
+  }
 </style>
 </head>
 <body>
