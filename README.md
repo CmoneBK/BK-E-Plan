@@ -141,6 +141,6 @@ Gehostet über **GitHub Pages** (Repo `CmoneBK/BK-E-Plan`).
 
 ## Lizenz & Credits
 
-- Eigenentwicklung für den Unterrichtseinsatz am Berufskolleg.
-- Eingebettete QR-Code-Bibliothek: [`qrcode-generator`](https://github.com/kazuhikoarase/qrcode-generator) (MIT-Lizenz).
+- © 2025–2026 Christoph Mones, **alle Rechte vorbehalten**. BK-E-Plan ist kein Open-Source-Projekt. Lernen, Unterrichten und das Offline-Benutzen im eigenen Unterricht sind kostenlos erlaubt; alles Weitere, besonders kommerzielle Nutzung und die Aufnahme in Produkte Dritter, braucht eine schriftliche Lizenz. Details in [`LICENSE.md`](LICENSE.md), Kontakt: kontakt@t-bk.de.
+- Eingebettete QR-Code-Bibliothek: [`qrcode-generator`](https://github.com/kazuhikoarase/qrcode-generator) (MIT-Lizenz), siehe [`DRITTANBIETER.md`](DRITTANBIETER.md).
 - Schaltzeichen-Vorlagen angelehnt an das VALIS-Projekt.
